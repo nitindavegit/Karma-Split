@@ -5,7 +5,7 @@ class LeaderboardCard extends StatelessWidget {
   final String name;
   final String username;
   final String avatarUrl;
-  final int points;
+  final double points;
   final String badgeImagePath;
   const LeaderboardCard({
     super.key,
@@ -31,7 +31,7 @@ class LeaderboardCard extends StatelessWidget {
             Image.asset(badgeImagePath, width: 40, height: 40),
             const SizedBox(width: 12),
             // Avatar
-            CircleAvatar(radius: 24, backgroundImage: AssetImage(avatarUrl)),
+            CircleAvatar(radius: 24, backgroundImage: NetworkImage(avatarUrl)),
             const SizedBox(width: 12),
             // Name & Username
             Expanded(

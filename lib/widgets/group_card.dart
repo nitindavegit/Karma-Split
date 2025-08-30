@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:karma_split/pages/group_detail_page.dart';
 
 class GroupCard extends StatelessWidget {
+  final String groupId;
   final String title; // Name of the group
   final int noOfMembers; // No of members
   final String imageUrl; // image of group
-  final int totalKarmaPoints; // total karma points of group
+  final double totalKarmaPoints; // total karma points of group
   final String topContributor; // top contributor of group
-  final int topContributorKarmaPoints; // top contributor karma points
+  final double topContributorKarmaPoints; // top contributor karma points
   final String topContributorImageUrl;
   const GroupCard({
     super.key,
+    required this.groupId,
     required this.title,
     required this.noOfMembers,
     required this.imageUrl,
@@ -26,7 +28,9 @@ class GroupCard extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => GroupDetailPage(groupName: title)),
+          MaterialPageRoute(
+            builder: (_) => GroupDetailPage(groupName: title, groupId: groupId),
+          ),
         );
       },
       child: Container(
@@ -48,9 +52,9 @@ class GroupCard extends StatelessWidget {
             // img
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.asset(
+              child: Image.network(
                 imageUrl,
-                height: 100,
+                height: 200,
                 width: double.infinity,
                 fit: BoxFit.cover,
               ),
@@ -115,7 +119,7 @@ class GroupCard extends StatelessWidget {
                     // Image of Top contributor
                     ClipRRect(
                       borderRadius: BorderRadius.circular(50),
-                      child: Image.asset(
+                      child: Image.network(
                         topContributorImageUrl,
                         height: 30,
                         width: 30,

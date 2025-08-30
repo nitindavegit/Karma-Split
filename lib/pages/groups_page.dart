@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:karma_split/pages/add_group_page.dart';
 import 'package:karma_split/widgets/group_card.dart';
@@ -7,69 +8,57 @@ class GroupsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Sample data
-    final groups = [
-      {
-        "title": "Flutter Devs",
-        "noOfMembers": 25,
-        "imageUrl": "assets/images/g1.jpg",
-        "totalKarmaPoints": 1200,
-        "topContributor": "Alice",
-        "topContributorKarmaPoints": 320,
-        "topContributorImageUrl": "assets/images/JD.jpg",
-      },
-      {
-        "title": "AI Enthusiasts",
-        "noOfMembers": 18,
-        "imageUrl": "assets/images/g2.jpg",
-        "totalKarmaPoints": 950,
-        "topContributor": "Bob",
-        "topContributorKarmaPoints": 280,
-        "topContributorImageUrl": "assets/images/RDJ.jpg",
-      },
-    ];
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Your Groups",
-          style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView.separated(
-          itemBuilder: (context, index) {
-            final g = groups[index];
-            return GroupCard(
-              title: g["title"] as String,
-              noOfMembers: g["noOfMembers"] as int,
-              imageUrl: g["imageUrl"] as String,
-              topContributor: g["topContributor"] as String,
-              topContributorKarmaPoints: g["topContributorKarmaPoints"] as int,
-              totalKarmaPoints: g["totalKarmaPoints"] as int,
-              topContributorImageUrl: g["topContributorImageUrl"] as String,
-            );
-          },
-          separatorBuilder: (_, __) => const SizedBox(height: 16),
-          itemCount: groups.length,
-        ),
+      appBar: AppBar(title: const Text("My Groups")),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection("groups").snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Center(child: Text("Something went wrong"));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final groups = snapshot.data!.docs;
+
+          if (groups.isEmpty) {
+            return const Center(child: Text("No groups yet, create one!"));
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: groups.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              final doc = groups[index];
+              final g = doc.data() as Map<String, dynamic>;
+
+              return GroupCard(
+                groupId: doc.id,
+                title: g["groupName"] ?? "Unnamed Group", // group name
+                noOfMembers: (g["members"] as List?)?.length ?? 0,
+                imageUrl: g["groupImageUrl"] ?? "",
+                topContributor: g["topContributor"] ?? "N/A",
+                topContributorKarmaPoints: (g["topContributorKarmaPoints"] ?? 0)
+                    .toDouble(),
+                totalKarmaPoints: (g["totalKarmaPoints"] ?? 0).toDouble(),
+                topContributorImageUrl: g["topContributorImageUrl"] ?? "",
+              );
+            },
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  AddGroupPage(), // Your Add Group screen widget
-            ),
+            MaterialPageRoute(builder: (_) => const AddGroupPage()),
           );
         },
         icon: const Icon(Icons.add),
-        label: const Text("Add group"),
+        label: const Text("Add Group"),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class FeedCard extends StatelessWidget {
-  final String username;
-  final int amount;
+  final String username; // of the person creating expense
+  final String createrImageUrl;
+  final double amount;
   final String description;
-  final List<String> splitWith;
-  final double splitAmount;
+  final List<String> splitWith; // usernames
   final double karmaPoints;
   final DateTime date;
-  final String imageUrl; // image is now required
+  final String imageUrl; // photo of expense
 
   const FeedCard({
     super.key,
@@ -16,14 +17,17 @@ class FeedCard extends StatelessWidget {
     required this.amount,
     required this.description,
     required this.splitWith,
-    required this.splitAmount,
     required this.karmaPoints,
     required this.date,
     required this.imageUrl,
+    required this.createrImageUrl,
   });
 
   @override
   Widget build(BuildContext context) {
+    final int totalPeople = splitWith.length + 1; // creator + splitWith
+    final double splitAmount = (amount / totalPeople);
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -37,17 +41,30 @@ class FeedCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  username,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Colors.grey[800],
-                  ),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundImage: NetworkImage(createrImageUrl),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      "@$username",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                  ],
                 ),
                 Text(
-                  "$date",
-                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  DateFormat('dd MMM yyyy • hh:mm a').format(date),
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -71,10 +88,10 @@ class FeedCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Image (always present)
+            // Image
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.asset(imageUrl, fit: BoxFit.cover),
+              child: Image.network(imageUrl, fit: BoxFit.cover),
             ),
             const SizedBox(height: 12),
 
@@ -91,18 +108,22 @@ class FeedCard extends StatelessWidget {
                   children: [
                     TextSpan(
                       text: 'Split with: ',
-                      style: TextStyle(color: Colors.grey[700]),
+                      style: TextStyle(fontSize: 16, color: Colors.grey[700]),
                     ),
                     TextSpan(
-                      text: "$splitWith",
+                      text: splitWith.isNotEmpty
+                          ? splitWith.join(", ")
+                          : "No one",
                       style: const TextStyle(
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.black87,
                       ),
                     ),
                     TextSpan(
-                      text: '\n$splitAmount each',
+                      text: '\n₹${splitAmount.toStringAsFixed(2)} each',
                       style: const TextStyle(
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                         color: Colors.green,
                       ),
