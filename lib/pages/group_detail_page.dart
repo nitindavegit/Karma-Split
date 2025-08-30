@@ -144,6 +144,52 @@ class _GroupDetailPageState extends State<GroupDetailPage>
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.groupName),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) async {
+              if (value == "add_member") {
+                // 👉 navigate to add member screen / dialog
+                // Example:
+                showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text("Add Member"),
+                    content: const Text("Implement add member flow here"),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text("Close"),
+                      ),
+                    ],
+                  ),
+                );
+              } else if (value == "leave_group") {
+                // 👉 implement leave group logic
+                final userId =
+                    "currentUsername"; // replace with logged in username
+                await FirebaseFirestore.instance
+                    .collection("groups")
+                    .doc(widget.groupId)
+                    .collection("members")
+                    .doc(userId)
+                    .delete();
+
+                // Optionally: also remove group from user's profile groupsJoined
+                Navigator.pop(context); // go back after leaving
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: "add_member",
+                child: Text("Add Member"),
+              ),
+              const PopupMenuItem(
+                value: "leave_group",
+                child: Text("Leave Group"),
+              ),
+            ],
+          ),
+        ],
         bottom: TabBar(
           controller: _tabController,
           tabs: const [

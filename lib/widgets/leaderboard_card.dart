@@ -28,7 +28,7 @@ class LeaderboardCard extends StatelessWidget {
         child: Row(
           children: [
             // rank badge
-            Image.asset(badgeImagePath, width: 40, height: 40),
+            Image.asset(badgeImagePath, width: 50, height: 50),
             const SizedBox(width: 12),
             // Avatar
             CircleAvatar(radius: 24, backgroundImage: NetworkImage(avatarUrl)),
