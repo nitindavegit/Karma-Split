@@ -55,7 +55,11 @@ class LeaderboardCard extends StatelessWidget {
             // Points
             Text(
               '$points pts',
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Colors.amber,
+              ),
             ),
           ],
         ),
