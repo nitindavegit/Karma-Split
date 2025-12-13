@@ -1,224 +1,246 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:karma_split/widgets/ranking_card.dart';
 import 'package:karma_split/widgets/recent_activity_card.dart';
 import 'package:karma_split/widgets/stat_card.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Temporary test user (for demo)
-    final testUserId = '9QZLIOkciZAQmSVStE1i';
-    final testUsername = 'nitin123';
+  State<ProfilePage> createState() => _ProfilePageState();
+}
 
-    final usersRef = FirebaseFirestore.instance.collection('users');
+class _ProfilePageState extends State<ProfilePage> {
+  Map<String, dynamic>? userData;
+  String? username;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadUserData();
+  }
+
+  Future<void> loadUserData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null || user.phoneNumber == null) {
+        setState(() => isLoading = false);
+        return;
+      }
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('phone', isEqualTo: user.phoneNumber!)
+          .get();
+
+      if (snapshot.docs.isEmpty) {
+        setState(() => isLoading = false);
+        return;
+      }
+
+      userData = snapshot.docs.first.data();
+      username = userData!["username"];
+      setState(() => isLoading = false);
+    } catch (e) {
+      debugPrint("Error loading profile: $e");
+      setState(() => isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final groupsRef = FirebaseFirestore.instance.collection('groups');
 
-    return StreamBuilder<DocumentSnapshot>(
-      stream: usersRef.doc(testUserId).snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
+    if (isLoading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
-        if (!snapshot.hasData || !snapshot.data!.exists) {
-          return const Scaffold(
-            body: Center(child: Text("User data not found.")),
-          );
-        }
+    if (userData == null) {
+      return const Scaffold(body: Center(child: Text("User data not found.")));
+    }
 
-        final userData = snapshot.data!.data() as Map<String, dynamic>;
-        final username = (userData['username'] ?? '') as String;
-
-        return SafeArea(
-          child: Scaffold(
-            backgroundColor: Colors.grey[100],
-            body: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Profile Card
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black12,
-                          blurRadius: 6,
-                          offset: Offset(0, 3),
-                        ),
-                      ],
+    return SafeArea(
+      child: Scaffold(
+        backgroundColor: Colors.grey[100],
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              // ---------------- PROFILE CARD ----------------
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 6,
+                      offset: Offset(0, 3),
                     ),
-                    child: Row(
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 35,
+                      backgroundImage: (userData!["photoUrl"] ?? "") != ""
+                          ? NetworkImage(userData!["photoUrl"])
+                          : const AssetImage("assets/images/JD.jpg")
+                                as ImageProvider,
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        CircleAvatar(
-                          radius: 35,
-                          backgroundImage: (userData["photoUrl"] ?? '') != ''
-                              ? NetworkImage(userData["photoUrl"])
-                              : const AssetImage("assets/images/JD.jpg")
-                                    as ImageProvider,
+                        Text(
+                          userData!['name'] ?? "No Name",
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        const SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              userData['name'] ?? "No Name",
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              "@$username",
-                              style: const TextStyle(color: Colors.grey),
-                            ),
-                          ],
+                        Text(
+                          "@$username",
+                          style: const TextStyle(color: Colors.grey),
                         ),
                       ],
                     ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // ---------------- STATS ----------------
+              Row(
+                children: [
+                  Expanded(
+                    child: StatCard(
+                      value: "${userData!['totalKarmaPoints'] ?? 0}",
+                      label: "Total Karma Points",
+                      icon: Icons.emoji_events,
+                      iconColor: Colors.orange,
+                    ),
                   ),
-
-                  const SizedBox(height: 20),
-
-                  // Stats
-                  Row(
-                    children: [
-                      Expanded(
-                        child: StatCard(
-                          value: (userData['totalKarmaPoints'] ?? 0).toString(),
-                          label: "Total Karma Points",
-                          icon: Icons.emoji_events,
-                          iconColor: Colors.orange,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: StatCard(
-                          value: (userData['groupsJoined'] ?? 0).toString(),
-                          label: "Groups Joined",
-                          icon: Icons.group,
-                          iconColor: Colors.blue,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: StatCard(
-                          value: (userData['expensesAdded'] ?? 0).toString(),
-                          label: "Expenses Added",
-                          icon: Icons.receipt,
-                          iconColor: Colors.green,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: StatCard(
-                          value: "₹${(userData['totalSpent'] ?? 0)}",
-                          label: "Total Spent",
-                          icon: Icons.attach_money,
-                          iconColor: Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // YOUR RANKINGS 
-                  _sectionTitle("Your Rankings"),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: groupsRef.snapshots(),
-                    builder: (context, groupsSnapshot) {
-                      if (!groupsSnapshot.hasData ||
-                          groupsSnapshot.data!.docs.isEmpty) {
-                        return const Center(
-                          child: Text("No ranking data available"),
-                        );
-                      }
-
-                      final allGroups = groupsSnapshot.data!.docs;
-
-                      return FutureBuilder<List<Widget>>(
-                        future: _buildRankingCards(allGroups, testUsername),
-                        builder: (context, futureSnapshot) {
-                          if (futureSnapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
-
-                          if (!futureSnapshot.hasData ||
-                              futureSnapshot.data!.isEmpty) {
-                            return const Center(
-                              child: Text("No ranking data available"),
-                            );
-                          }
-
-                          return Column(children: futureSnapshot.data!);
-                        },
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // RECENT ACTIVITY 
-                  _sectionTitle("Recent Activity"),
-                  StreamBuilder<QuerySnapshot>(
-                    stream: groupsRef.snapshots(),
-                    builder: (context, groupsSnapshot) {
-                      if (!groupsSnapshot.hasData ||
-                          groupsSnapshot.data!.docs.isEmpty) {
-                        return const Center(
-                          child: Text("No recent activity yet"),
-                        );
-                      }
-
-                      return FutureBuilder<List<Widget>>(
-                        future: _buildActivityCards(
-                          groupsSnapshot.data!.docs,
-                          testUsername,
-                        ),
-                        builder: (context, futureSnapshot) {
-                          if (futureSnapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
-
-                          if (!futureSnapshot.hasData ||
-                              futureSnapshot.data!.isEmpty) {
-                            return const Center(
-                              child: Text("No recent activity yet"),
-                            );
-                          }
-
-                          return Column(children: futureSnapshot.data!);
-                        },
-                      );
-                    },
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: StatCard(
+                      value: "${userData!['groupsJoined'] ?? 0}",
+                      label: "Groups Joined",
+                      icon: Icons.group,
+                      iconColor: Colors.blue,
+                    ),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: StatCard(
+                      value: "${userData!['expensesAdded'] ?? 0}",
+                      label: "Expenses Added",
+                      icon: Icons.receipt,
+                      iconColor: Colors.green,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: StatCard(
+                      value: "₹${userData!['totalSpent'] ?? 0}",
+                      label: "Total Spent",
+                      icon: Icons.currency_rupee,
+                      iconColor: Colors.red,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 20),
+
+              // ---------------- YOUR RANKINGS ----------------
+              _sectionTitle("Your Rankings"),
+
+              StreamBuilder<QuerySnapshot>(
+                stream: groupsRef.snapshots(),
+                builder: (context, groupsSnapshot) {
+                  if (!groupsSnapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final allGroups = groupsSnapshot.data!.docs;
+
+                  return FutureBuilder<List<Widget>>(
+                    future: _buildRankingCards(allGroups, username!),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      return Column(children: snapshot.data!);
+                    },
+                  );
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              // ---------------- RECENT ACTIVITY ----------------
+              _sectionTitle("Recent Activity"),
+
+              StreamBuilder<QuerySnapshot>(
+                stream: groupsRef.snapshots(),
+                builder: (context, groupsSnapshot) {
+                  if (!groupsSnapshot.hasData) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  return FutureBuilder<List<Widget>>(
+                    future: _buildActivityCards(
+                      groupsSnapshot.data!.docs,
+                      username!,
+                    ),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      return Column(children: snapshot.data!);
+                    },
+                  );
+                },
+              ),
+
+              const SizedBox(height: 20),
+
+              // ---------------- LOGOUT BUTTON ----------------
+              ElevatedButton(
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  // AuthWrapper will handle navigation
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text("Logout"),
+              ),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
+  // ---------------------- BUILD RANK CARDS ----------------------
   static Future<List<Widget>> _buildRankingCards(
     List<QueryDocumentSnapshot> groups,
     String username,
@@ -227,7 +249,6 @@ class ProfilePage extends StatelessWidget {
 
     for (var groupDoc in groups) {
       try {
-        // Check if user is a member of this group
         final memberDoc = await groupDoc.reference
             .collection('members')
             .doc(username)
@@ -239,16 +260,12 @@ class ProfilePage extends StatelessWidget {
         final groupData = groupDoc.data() as Map<String, dynamic>;
         final groupName = groupData['groupName'] ?? 'Unnamed Group';
 
-        // Get all members sorted by karma points
         final membersSnapshot = await groupDoc.reference
             .collection('members')
             .orderBy('karmaPoints', descending: true)
             .get();
 
         final allMembers = membersSnapshot.docs;
-        final totalMembers = allMembers.length;
-
-        // Find user's rank
         final rankIndex = allMembers.indexWhere((m) => m.id == username);
         final rank = rankIndex == -1 ? "?" : (rankIndex + 1).toString();
 
@@ -261,18 +278,17 @@ class ProfilePage extends StatelessWidget {
               group: groupName,
               points: "$points karma points",
               rankBadge: "#$rank",
-              rankDetail: "Rank $rank of $totalMembers",
+              rankDetail: "Rank $rank of ${allMembers.length}",
             ),
           ),
         );
-      } catch (e) {
-        print('Error building ranking card: $e');
-      }
+      } catch (_) {}
     }
 
     return cards;
   }
 
+  // ---------------------- BUILD ACTIVITY CARDS ----------------------
   static Future<List<Widget>> _buildActivityCards(
     List<QueryDocumentSnapshot> groups,
     String username,
@@ -280,55 +296,42 @@ class ProfilePage extends StatelessWidget {
     List<Map<String, dynamic>> activities = [];
 
     for (var groupDoc in groups) {
-      try {
-        final groupData = groupDoc.data() as Map<String, dynamic>;
-        final groupName = groupData['groupName'] ?? 'Unknown Group';
+      final groupData = groupDoc.data() as Map<String, dynamic>;
+      final groupName = groupData['groupName'];
 
-        // Get all expenses from this group
-        final expensesSnapshot = await groupDoc.reference
-            .collection('expenses')
-            .get();
+      final expensesSnapshot = await groupDoc.reference
+          .collection('expenses')
+          .get();
 
-        // Filter expenses created by this user
-        for (var expenseDoc in expensesSnapshot.docs) {
-          final data = expenseDoc.data();
-          if (data['createdBy'] == username) {
-            activities.add({
-              'groupName': groupName,
-              'data': data,
-              'timestamp': data['timestamp'] as Timestamp?,
-            });
-          }
+      for (var expense in expensesSnapshot.docs) {
+        final data = expense.data();
+
+        if (data['createdBy'] == username) {
+          activities.add({
+            'groupName': groupName,
+            'data': data,
+            'timestamp': data['timestamp'] as Timestamp?,
+          });
         }
-      } catch (e) {
-        print('Error fetching activities: $e');
       }
     }
 
-    // Sort all activities by timestamp
     activities.sort((a, b) {
-      final aTime = a['timestamp'] as Timestamp?;
-      final bTime = b['timestamp'] as Timestamp?;
-      if (aTime == null || bTime == null) return 0;
-      return bTime.compareTo(aTime);
+      final t1 = a['timestamp']?.toDate() ?? DateTime(0);
+      final t2 = b['timestamp']?.toDate() ?? DateTime(0);
+      return t2.compareTo(t1);
     });
 
-    // Take only the 3 most recent
-    final recentActivities = activities.take(3).toList();
+    final recent = activities.take(3).toList();
 
-    return recentActivities.map((activity) {
-      final data = activity['data'] as Map<String, dynamic>;
-      final groupName = activity['groupName'] as String;
-      final desc = data["description"] ?? "No description";
-      final amount = (data["amount"] ?? 0).toString();
-      final karma = (data["karmaPoints"] ?? 0).toString();
-
+    return recent.map((activity) {
+      final data = activity['data'];
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: RecentActivityCard(
-          title: "₹$amount in $groupName",
-          points: "+$karma",
-          subtitle: desc,
+          title: "₹${data['amount']} in ${activity['groupName']}",
+          points: "+${data['karmaPoints']}",
+          subtitle: data['description'] ?? "",
         ),
       );
     }).toList();
