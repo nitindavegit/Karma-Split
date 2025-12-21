@@ -27,7 +27,7 @@ class Group {
     final data = doc.data() as Map<String, dynamic>;
     return Group(
       id: doc.id,
-      name: data['name'] ?? '',
+      name: data['groupName'] ?? '',
       imageUrl: data['imageUrl'] ?? '',
       members: List<String>.from(data['members'] ?? []),
       totalKarmaPoints: (data['totalKarmaPoints'] ?? 0).toDouble(),
@@ -40,7 +40,7 @@ class Group {
 
   Map<String, dynamic> toMap() {
     return {
-      "name": name,
+      "groupName": name,
       "imageUrl": imageUrl,
       "members": members,
       "totalKarmaPoints": totalKarmaPoints,
