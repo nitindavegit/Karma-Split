@@ -35,53 +35,65 @@ class SelectGroup extends StatelessWidget {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
-          ...groups.map((group) {
-            bool isSelected = group == selectedGroup;
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => onGroupSelected(group),
-                  borderRadius: BorderRadius.circular(8),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? Colors.blue.withAlpha(30)
-                          : Colors.white,
-                      border: Border.all(
-                        color: isSelected ? Colors.blue : Colors.grey.shade300,
-                        width: 1,
+          if (groups.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text(
+                "You haven't joined any groups yet. Create or join a group to add expenses.",
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+            )
+          else
+            ...groups.map((group) {
+              bool isSelected = group == selectedGroup;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => onGroupSelected(group),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12,
+                        horizontal: 12,
                       ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.group_outlined,
-                          color: Colors.grey.shade600,
-                          size: 20,
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? Colors.blue.withAlpha(30)
+                            : Colors.white,
+                        border: Border.all(
+                          color: isSelected
+                              ? Colors.blue
+                              : Colors.grey.shade300,
+                          width: 1,
                         ),
-                        const SizedBox(width: 12),
-                        Text(
-                          group,
-                          style: TextStyle(
-                            color: isSelected ? Colors.blue : Colors.black87,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w400,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.group_outlined,
+                            color: Colors.grey.shade600,
+                            size: 20,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 12),
+                          Text(
+                            group,
+                            style: TextStyle(
+                              color: isSelected ? Colors.blue : Colors.black87,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            );
-          }),
+              );
+            }),
         ],
       ),
     );
