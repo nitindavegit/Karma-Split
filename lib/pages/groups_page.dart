@@ -1,17 +1,59 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:karma_split/pages/add_group_page.dart';
 import 'package:karma_split/widgets/group_card.dart';
 
-class GroupsPage extends StatelessWidget {
+class GroupsPage extends StatefulWidget {
   const GroupsPage({super.key});
 
   @override
+  State<GroupsPage> createState() => _GroupsPageState();
+}
+
+class _GroupsPageState extends State<GroupsPage> {
+  String? _currentUsername;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCurrentUser();
+  }
+
+  Future<void> _fetchCurrentUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && user.phoneNumber != null) {
+      try {
+        final userQuery = await FirebaseFirestore.instance
+            .collection('users')
+            .where('phone', isEqualTo: user.phoneNumber!)
+            .limit(1)
+            .get();
+
+        if (userQuery.docs.isNotEmpty) {
+          setState(() {
+            _currentUsername = userQuery.docs.first['username'];
+          });
+        }
+      } catch (e) {
+        debugPrint("Error fetching current user: $e");
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_currentUsername == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text("My Groups")),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection("groups").snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection("groups")
+            .where("members", arrayContains: _currentUsername!)
+            .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return const Center(child: Text("Something went wrong"));
