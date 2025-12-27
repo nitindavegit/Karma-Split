@@ -129,7 +129,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   Expanded(
                     child: StatCard(
-                      value: "${totalKarmaPoints.toStringAsFixed(1)}",
+                      value: totalKarmaPoints.toStringAsFixed(1),
                       label: "Total Karma Points",
                       icon: Icons.emoji_events,
                       iconColor: Colors.orange,
