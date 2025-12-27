@@ -118,3 +118,6 @@ firebase_options.dart
 # Project specific files
 *.iml
 *karma_split.iml
+
+# environment variables
+.env
