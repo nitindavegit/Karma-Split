@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:karma_split/widgets/ranking_card.dart';
 import 'package:karma_split/widgets/recent_activity_card.dart';
 import 'package:karma_split/widgets/stat_card.dart';
+import 'package:karma_split/utils/karma_calculator.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -15,6 +16,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? userData;
   String? username;
+  double totalKarmaPoints = 0.0; // Calculated from all groups
   bool isLoading = true;
 
   @override
@@ -43,6 +45,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
       userData = snapshot.docs.first.data();
       username = userData!["username"];
+
+      // Calculate total karma points from all groups
+      print('🔍 DEBUG: Calculating total karma points for profile...');
+      totalKarmaPoints = await KarmaCalculator.calculateUserTotalKarmaPoints(
+        username!,
+      );
+
       setState(() => isLoading = false);
     } catch (e) {
       debugPrint("Error loading profile: $e");
@@ -69,7 +78,7 @@ class _ProfilePageState extends State<ProfilePage> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              // ---------------- PROFILE CARD ----------------
+              // PROFILE CARD 
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -115,12 +124,12 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 20),
 
-              // ---------------- STATS ----------------
+              // STATS 
               Row(
                 children: [
                   Expanded(
                     child: StatCard(
-                      value: "${userData!['totalKarmaPoints'] ?? 0}",
+                      value: "${totalKarmaPoints.toStringAsFixed(1)}",
                       label: "Total Karma Points",
                       icon: Icons.emoji_events,
                       iconColor: Colors.orange,
@@ -162,7 +171,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 20),
 
-              // ---------------- YOUR RANKINGS ----------------
+              // YOUR RANKINGS 
               _sectionTitle("Your Rankings"),
 
               StreamBuilder<QuerySnapshot>(
@@ -189,7 +198,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 20),
 
-              // ---------------- RECENT ACTIVITY ----------------
+              // RECENT ACTIVITY 
               _sectionTitle("Recent Activity"),
 
               StreamBuilder<QuerySnapshot>(
@@ -217,7 +226,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
               const SizedBox(height: 20),
 
-              // ---------------- LOGOUT BUTTON ----------------
+              // LOGOUT BUTTON 
               ElevatedButton(
                 onPressed: () async {
                   await FirebaseAuth.instance.signOut();
@@ -240,7 +249,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // ---------------------- BUILD RANK CARDS ----------------------
+  // BUILD RANK CARDS 
   static Future<List<Widget>> _buildRankingCards(
     List<QueryDocumentSnapshot> groups,
     String username,
@@ -288,7 +297,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return cards;
   }
 
-  // ---------------------- BUILD ACTIVITY CARDS ----------------------
+  // BUILD ACTIVITY CARDS 
   static Future<List<Widget>> _buildActivityCards(
     List<QueryDocumentSnapshot> groups,
     String username,
