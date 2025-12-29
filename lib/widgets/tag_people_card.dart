@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class TagPeopleCard extends StatefulWidget {
   final List<String> groupMembers;
   final Function(List<String>)? onTagsChanged;
+  final String? currentUsername; // Add current username for validation
 
   const TagPeopleCard({
     super.key,
     required this.groupMembers,
     this.onTagsChanged,
+    this.currentUsername, // Add this parameter
   });
 
   @override
@@ -18,8 +20,16 @@ class _TagPeopleCardState extends State<TagPeopleCard> {
   final TextEditingController _tagController = TextEditingController();
   final List<String> _taggedPeople = [];
   List<String> _filteredMembers = [];
+  String? _errorMessage; // To show validation errors
 
   void _filterSuggestions(String value) {
+    // Clear error message when user types
+    if (_errorMessage != null) {
+      setState(() {
+        _errorMessage = null;
+      });
+    }
+
     if (value.endsWith('@')) {
       // Start showing all members when '@' is typed
       _filteredMembers = widget.groupMembers;
@@ -35,6 +45,19 @@ class _TagPeopleCardState extends State<TagPeopleCard> {
   }
 
   void _addTag(String member) {
+    // Clear previous error message
+    setState(() {
+      _errorMessage = null;
+    });
+
+    // Prevent self-tagging
+    if (widget.currentUsername != null && member == widget.currentUsername) {
+      setState(() {
+        _errorMessage = 'You cannot tag yourself';
+      });
+      return;
+    }
+
     if (!_taggedPeople.contains(member)) {
       setState(() {
         _taggedPeople.add(member);
@@ -67,6 +90,15 @@ class _TagPeopleCardState extends State<TagPeopleCard> {
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const SizedBox(height: 8),
+
+          // Show error message if any
+          if (_errorMessage != null) ...[
+            Text(
+              _errorMessage!,
+              style: const TextStyle(color: Colors.red, fontSize: 14),
+            ),
+            const SizedBox(height: 8),
+          ],
 
           // Tag input field
           TextField(
