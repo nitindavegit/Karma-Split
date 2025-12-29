@@ -35,6 +35,9 @@ class _AddExpensePageState extends State<AddExpensePage> {
   String? _selectedGroup; // group name
   String? _selectedGroupId; // Firestore groupId
 
+  // Current User
+  String? _currentUsername; // Current user's username
+
   // Tagged People
   List<String> _taggedPeople = [];
 
@@ -90,6 +93,11 @@ class _AddExpensePageState extends State<AddExpensePage> {
       final userDoc = userQuery.docs.first;
       final username = userDoc['username'];
 
+      // Store current username for filtering group members
+      setState(() {
+        _currentUsername = username;
+      });
+
       final query = await FirebaseFirestore.instance
           .collection('groups')
           .where('members', arrayContains: username)
@@ -139,8 +147,13 @@ class _AddExpensePageState extends State<AddExpensePage> {
         final data = groupDoc.data();
         final members = List<String>.from(data?['members'] ?? []);
 
+        // Filter out the current user to prevent self-tagging
+        final filteredMembers = members
+            .where((member) => member != _currentUsername)
+            .toList();
+
         setState(() {
-          _groupMembers[groupName] = members;
+          _groupMembers[groupName] = filteredMembers;
         });
       }
     } catch (e) {
@@ -473,9 +486,19 @@ class _AddExpensePageState extends State<AddExpensePage> {
       _selectedGroup = null;
       _selectedGroupId = null;
       _selectedImage = null;
+      _taggedPeople = []; // Clear tagged people as well
       _isSubmitting = false;
     });
     print('🔍 DEBUG: _clearForm() completed');
+  }
+
+  // Helper method to get filtered group members (excluding current user)
+  List<String> _getFilteredGroupMembers(String groupName) {
+    final members = _groupMembers[groupName] ?? [];
+    if (_currentUsername == null) {
+      return members;
+    }
+    return members.where((member) => member != _currentUsername).toList();
   }
 
   // TOP CONTRIBUTOR UPDATE
@@ -645,9 +668,11 @@ class _AddExpensePageState extends State<AddExpensePage> {
               groupMembers:
                   _selectedGroup != null &&
                       _groupMembers[_selectedGroup] != null
-                  ? _groupMembers[_selectedGroup]!
+                  ? _getFilteredGroupMembers(_selectedGroup!)
                   : [],
               onTagsChanged: _onTagsChanged,
+              currentUsername:
+                  _currentUsername, // Pass current username for validation
             ),
 
             const SizedBox(height: 16),
