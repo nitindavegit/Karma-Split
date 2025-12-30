@@ -4,12 +4,14 @@ class TagPeopleCard extends StatefulWidget {
   final List<String> groupMembers;
   final Function(List<String>)? onTagsChanged;
   final String? currentUsername; // Add current username for validation
+  final List<String>? initialTaggedPeople; // Initial tagged people from parent
 
   const TagPeopleCard({
     super.key,
     required this.groupMembers,
     this.onTagsChanged,
     this.currentUsername, // Add this parameter
+    this.initialTaggedPeople, // Add this parameter
   });
 
   @override
@@ -18,9 +20,11 @@ class TagPeopleCard extends StatefulWidget {
 
 class _TagPeopleCardState extends State<TagPeopleCard> {
   final TextEditingController _tagController = TextEditingController();
-  final List<String> _taggedPeople = [];
   List<String> _filteredMembers = [];
   String? _errorMessage; // To show validation errors
+
+  // Get tagged people from parent as single source of truth
+  List<String> get _taggedPeople => widget.initialTaggedPeople ?? [];
 
   void _filterSuggestions(String value) {
     // Clear error message when user types
@@ -58,16 +62,17 @@ class _TagPeopleCardState extends State<TagPeopleCard> {
       return;
     }
 
+    // Create new list with added member (since we're using parent's state)
     if (!_taggedPeople.contains(member)) {
+      final newTaggedPeople = List<String>.from(_taggedPeople);
+      newTaggedPeople.add(member);
+
       setState(() {
-        _taggedPeople.add(member);
-        _tagController.text = _tagController.text.replaceAll(
-          RegExp(r'@\w*$'),
-          '@$member ',
-        );
+        _tagController
+            .clear(); // Simple text clearing instead of regex replacement
         _filteredMembers = [];
       });
-      widget.onTagsChanged?.call(_taggedPeople);
+      widget.onTagsChanged?.call(newTaggedPeople);
     }
   }
 
@@ -139,10 +144,12 @@ class _TagPeopleCardState extends State<TagPeopleCard> {
                     (tag) => Chip(
                       label: Text(tag),
                       onDeleted: () {
-                        setState(() {
-                          _taggedPeople.remove(tag);
-                        });
-                        widget.onTagsChanged?.call(_taggedPeople);
+                        // Create new list without the deleted member (since we're using parent's state)
+                        final newTaggedPeople = List<String>.from(
+                          _taggedPeople,
+                        );
+                        newTaggedPeople.remove(tag);
+                        widget.onTagsChanged?.call(newTaggedPeople);
                       },
                     ),
                   )
