@@ -15,7 +15,9 @@ import 'package:karma_split/widgets/tag_people_card.dart';
 import 'package:karma_split/utils/karma_calculator.dart';
 
 class AddExpensePage extends StatefulWidget {
-  const AddExpensePage({super.key});
+  final VoidCallback? onExpenseAdded;
+
+  const AddExpensePage({super.key, this.onExpenseAdded});
 
   @override
   State<AddExpensePage> createState() => _AddExpensePageState();
@@ -162,7 +164,16 @@ class _AddExpensePageState extends State<AddExpensePage> {
   }
 
   void _onTagsChanged(List<String> tagged) {
-    _taggedPeople = tagged;
+    // Validate that all tagged people exist in the selected group
+    if (_selectedGroup != null && _groupMembers[_selectedGroup] != null) {
+      final validMembers = _groupMembers[_selectedGroup]!;
+      final validatedTags = tagged
+          .where((person) => validMembers.contains(person))
+          .toList();
+      _taggedPeople = validatedTags;
+    } else {
+      _taggedPeople = tagged;
+    }
     _updateButtonState();
   }
 
@@ -389,15 +400,6 @@ class _AddExpensePageState extends State<AddExpensePage> {
             'lastActivity': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
 
-      // Update top contributor information
-      print('🔍 DEBUG: Updating top contributor for user: $username');
-      await _updateTopContributor(
-        _selectedGroupId!,
-        username,
-        totalAmount,
-        userPhotoUrl,
-      );
-
       // Update member ranks in the group
       print('🔍 DEBUG: Updating member ranks in group');
       await _updateGroupMemberRanks(_selectedGroupId!);
@@ -441,6 +443,12 @@ class _AddExpensePageState extends State<AddExpensePage> {
         await _updateUserTotalKarmaPointsInCollection(taggedPerson);
       }
 
+      // Update top contributor information (after all member statistics are updated)
+      print(
+        '🔍 DEBUG: Updating top contributor after all member statistics are updated',
+      );
+      await _updateTopContributor(_selectedGroupId!, username, userPhotoUrl);
+
       // Show success message
       print('🔍 DEBUG: Showing success snackbar...');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -454,7 +462,14 @@ class _AddExpensePageState extends State<AddExpensePage> {
       print('🔍 DEBUG: Clearing form...');
       _clearForm();
       print('🔍 DEBUG: Form cleared, navigating back...');
-      Navigator.pop(context);
+
+      // Call the callback to navigate to Groups page if provided
+      if (widget.onExpenseAdded != null) {
+        widget.onExpenseAdded!();
+      } else {
+        // Fallback to Navigator.pop for backward compatibility
+        Navigator.pop(context);
+      }
       print('🔍 DEBUG: Navigation completed');
     } catch (e) {
       print('🔍 DEBUG: Caught exception in _onSubmit: $e');
@@ -501,60 +516,114 @@ class _AddExpensePageState extends State<AddExpensePage> {
     return members.where((member) => member != _currentUsername).toList();
   }
 
-  // TOP CONTRIBUTOR UPDATE
+  // TOP CONTRIBUTOR UPDATE - Now queries actual leaderboard data
   Future<void> _updateTopContributor(
     String groupId,
-    String username,
-    double amountSpent,
-    String userPhotoUrl,
+    String currentUserUsername,
+    String currentUserPhotoUrl,
   ) async {
     try {
-      // Get current group data
+      print(
+        '🔍 DEBUG: Querying current leaderboard to determine top contributor',
+      );
+
+      // Get all members ordered by karma points (highest first)
+      final membersSnapshot = await FirebaseFirestore.instance
+          .collection('groups')
+          .doc(groupId)
+          .collection('members')
+          .orderBy('karmaPoints', descending: true)
+          .limit(1)
+          .get();
+
+      if (membersSnapshot.docs.isEmpty) {
+        print('🔍 DEBUG: No members found in group');
+        return;
+      }
+
+      final topMemberDoc = membersSnapshot.docs.first;
+      final topMemberData = topMemberDoc.data();
+      final topMemberUsername = topMemberDoc.id;
+      final topMemberKarmaPoints =
+          (topMemberData['karmaPoints'] as num?)?.toDouble() ?? 0.0;
+      final topMemberPhotoUrl = _safeImageUrl(
+        topMemberData['photoUrl'] as String?,
+      );
+
+      print(
+        '🔍 DEBUG: Current top contributor: $topMemberUsername with $topMemberKarmaPoints karma points',
+      );
+
+      // Get current group data to compare
       final groupDoc = await FirebaseFirestore.instance
           .collection('groups')
           .doc(groupId)
           .get();
 
-      if (!groupDoc.exists) return;
+      if (!groupDoc.exists) {
+        print('🔍 DEBUG: Group document not found');
+        return;
+      }
 
       final groupData = groupDoc.data() ?? {};
       final currentTopContributor = groupData['topContributor'] as String?;
       final currentTopContributorKarmaPoints =
           (groupData['topContributorKarmaPoints'] as num?)?.toDouble() ?? 0.0;
 
-      // Get current user's total spent from members subcollection
-      final memberDoc = await FirebaseFirestore.instance
-          .collection('groups')
-          .doc(groupId)
-          .collection('members')
-          .doc(username)
-          .get();
+      // Check if we need to update the top contributor
+      bool shouldUpdate = false;
+      String newTopContributor = topMemberUsername;
+      double newTopContributorKarmaPoints = topMemberKarmaPoints;
+      String newTopContributorImageUrl = topMemberPhotoUrl;
 
-      double userTotalSpent = amountSpent; // This is the new expense amount
-      if (memberDoc.exists) {
-        final memberData = memberDoc.data() ?? {};
-        final previousSpent = (memberData['spent'] as num?)?.toDouble() ?? 0.0;
-        userTotalSpent = previousSpent + amountSpent; // Total spent by user
+      if (currentTopContributor == null) {
+        // No current top contributor
+        shouldUpdate = true;
+        print(
+          '🔍 DEBUG: No current top contributor, setting $topMemberUsername as top contributor',
+        );
+      } else if (topMemberUsername != currentTopContributor) {
+        // Different person is now the top contributor
+        shouldUpdate = true;
+        print(
+          '🔍 DEBUG: Top contributor changed from $currentTopContributor to $topMemberUsername',
+        );
+      } else if (topMemberKarmaPoints != currentTopContributorKarmaPoints) {
+        // Same person but karma points changed
+        shouldUpdate = true;
+        print(
+          '🔍 DEBUG: Top contributor karma points updated for $topMemberUsername',
+        );
       }
 
-      // Check if this user should be the new top contributor
-      if (currentTopContributor == null ||
-          userTotalSpent > currentTopContributorKarmaPoints) {
-        // Update top contributor information
+      if (shouldUpdate) {
+        // Update top contributor information in group document
         await FirebaseFirestore.instance.collection('groups').doc(groupId).set({
-          'topContributor': username,
-          'topContributorKarmaPoints': userTotalSpent,
-          'topContributorImageUrl': userPhotoUrl,
+          'topContributor': newTopContributor,
+          'topContributorKarmaPoints': newTopContributorKarmaPoints,
+          'topContributorImageUrl': newTopContributorImageUrl,
         }, SetOptions(merge: true));
 
         print(
-          '🔍 DEBUG: Updated top contributor to $username with $userTotalSpent spent',
+          '🔍 DEBUG: Updated top contributor to $newTopContributor with $newTopContributorKarmaPoints karma points',
         );
+      } else {
+        print('🔍 DEBUG: Top contributor information is already up to date');
       }
     } catch (e) {
       print('🔍 DEBUG: Error updating top contributor: $e');
       // Don't throw error to avoid breaking the main flow
     }
+  }
+
+  // Helper method to safely handle image URLs
+  String _safeImageUrl(String? url) {
+    if (url != null &&
+        url.trim().isNotEmpty &&
+        (url.startsWith('http://') || url.startsWith('https://'))) {
+      return url;
+    }
+    return 'https://via.placeholder.com/400x250.png?text=No+Image';
   }
 
   // Member's rank update
@@ -673,6 +742,8 @@ class _AddExpensePageState extends State<AddExpensePage> {
               onTagsChanged: _onTagsChanged,
               currentUsername:
                   _currentUsername, // Pass current username for validation
+              initialTaggedPeople:
+                  _taggedPeople, // Pass current tagged people for single source of truth
             ),
 
             const SizedBox(height: 16),
