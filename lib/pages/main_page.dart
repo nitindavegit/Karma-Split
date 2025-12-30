@@ -12,11 +12,25 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int _currentPage = 0;
-  final List<Widget> _pages = const [
-    GroupsPage(),
-    AddExpensePage(),
-    ProfilePage(),
-  ];
+
+  // Create pages with callbacks for navigation
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      const GroupsPage(),
+      AddExpensePage(onExpenseAdded: _navigateToGroups),
+      const ProfilePage(),
+    ];
+  }
+
+  void _navigateToGroups() {
+    setState(() {
+      _currentPage = 0; // Switch to Groups tab
+    });
+  }
 
   void _onItemTapped(int index) {
     setState(() {
