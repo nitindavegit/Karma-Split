@@ -40,18 +40,22 @@ class _AddGroupPageState extends State<AddGroupPage> {
         .get();
 
     if (query.docs.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("❌ User @$username does not exist")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("❌ User @$username does not exist")),
+        );
+      }
       return;
     }
 
     final userDoc = query.docs.first;
     final photoUrl = userDoc["photoUrl"] ?? "";
     if (members.any((m) => m['username'] == username)) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("⚠️ @$username already added")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("⚠️ @$username already added")));
+      }
       return;
     }
 
@@ -64,9 +68,11 @@ class _AddGroupPageState extends State<AddGroupPage> {
   Future<void> createGroup() async {
     final groupName = _groupNameController.text.trim();
     if (groupName.isEmpty || members.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please enter group name and add members")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Please enter group name and add members")),
+        );
+      }
       return;
     }
 
@@ -92,11 +98,13 @@ class _AddGroupPageState extends State<AddGroupPage> {
 
     await docRef.set(groupData);
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text("✅ Group '$groupName' created!")));
+    if (mounted) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("✅ Group '$groupName' created!")));
 
-    Navigator.pop(context);
+      Navigator.pop(context);
+    }
   }
 
   @override

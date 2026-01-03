@@ -401,12 +401,14 @@ class _AddExpensePageState extends State<AddExpensePage> {
       await _updateTopContributor(_selectedGroupId!, username, userPhotoUrl);
 
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Expense added successfully!'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Expense added successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
 
       // Clear form and navigate back
       _clearForm();
@@ -416,15 +418,19 @@ class _AddExpensePageState extends State<AddExpensePage> {
         widget.onExpenseAdded!();
       } else {
         // Fallback to Navigator.pop for backward compatibility
-        Navigator.pop(context);
+        if (mounted) {
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to add expense: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to add expense: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
 
       // Re-enable button
       setState(() {

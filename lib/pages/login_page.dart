@@ -78,9 +78,11 @@ class _LoginPageState extends State<LoginPage> {
       _onVerificationSuccess();
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid OTP. Please try again.')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid OTP. Please try again.')),
+        );
+      }
     }
   }
 
@@ -97,20 +99,26 @@ class _LoginPageState extends State<LoginPage> {
           .where('phone', isEqualTo: phone)
           .get();
       if (querySnapshot.docs.isNotEmpty) {
-        Navigator.of(
-          context,
-        ).pushReplacement(MaterialPageRoute(builder: (_) => const MainPage()));
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const MainPage()),
+          );
+        }
       } else {
         await _auth.signOut();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Account not found. Please sign up.')),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Account not found. Please sign up.')),
+          );
+        }
       }
     } catch (e) {
       await _auth.signOut();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error checking account: ${e.toString()}')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error checking account: ${e.toString()}')),
+        );
+      }
     }
   }
 

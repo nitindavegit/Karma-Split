@@ -23,7 +23,7 @@ class _GroupDetailPageState extends State<GroupDetailPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
- //  String? _currentUid; // firebase uid if signed-in
+  //  String? _currentUid; // firebase uid if signed-in
   String? _currentUsername; // username from users/{uid}
   final _firestore = FirebaseFirestore.instance;
 
@@ -291,7 +291,9 @@ class _GroupDetailPageState extends State<GroupDetailPage>
 
       _showSnack('You left ${widget.groupName}');
       // optionally pop back to groups list
-      Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+      }
     } catch (e) {
       _showSnack('Failed to leave group', error: true);
     }
