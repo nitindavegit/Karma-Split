@@ -18,7 +18,6 @@ Future<int> getUserRank(String userId) async {
 
     return -1; // user not found
   } catch (e) {
-    print('Error getting user rank: $e');
     return -1; // return -1 on error
   }
 }

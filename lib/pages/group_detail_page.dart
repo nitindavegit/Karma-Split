@@ -23,85 +23,61 @@ class _GroupDetailPageState extends State<GroupDetailPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
-  String? _currentUid; // firebase uid if signed-in
+ //  String? _currentUid; // firebase uid if signed-in
   String? _currentUsername; // username from users/{uid}
   final _firestore = FirebaseFirestore.instance;
 
   @override
   void initState() {
-    print(
-      '🔍 DEBUG: GroupDetailPage initState - GroupID: ${widget.groupId}, GroupName: ${widget.groupName}',
-    );
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    print('🔍 DEBUG: TabController initialized, starting _initCurrentUser...');
     _initCurrentUser();
   }
 
   Future<void> _initCurrentUser() async {
-    print('🔍 DEBUG: _initCurrentUser started');
     final firebaseUser = FirebaseAuth.instance.currentUser;
-    print('🔍 DEBUG: Firebase user: ${firebaseUser?.uid ?? 'null'}');
 
     if (firebaseUser != null) {
-      _currentUid = firebaseUser.uid;
-      print('🔍 DEBUG: Current UID set: $_currentUid');
+      // _currentUid = firebaseUser.uid;
 
       // Search by phone number since user documents were created with phone as ID
       final phone = firebaseUser.phoneNumber;
-      print('🔍 DEBUG: User phone: ${phone ?? 'null'}');
 
       if (phone != null) {
         try {
-          print('🔍 DEBUG: Querying users collection by phone...');
           final userQuery = await _firestore
               .collection('users')
               .where('phone', isEqualTo: phone)
               .limit(1)
               .get();
 
-          print(
-            '🔍 DEBUG: User query completed, docs found: ${userQuery.docs.length}',
-          );
-
           if (userQuery.docs.isNotEmpty) {
             final userDoc = userQuery.docs.first;
             final data = userDoc.data();
             final username = (data['username'] as String?) ?? firebaseUser.uid;
-            print('🔍 DEBUG: Setting currentUsername to: $username');
             setState(() {
               _currentUsername = username;
             });
           } else {
             // fallback to UID if no user doc found
-            print(
-              '🔍 DEBUG: No user docs found, using Firebase UID as fallback',
-            );
             setState(() {
               _currentUsername = firebaseUser.uid;
             });
           }
         } catch (e) {
-          print('🔍 DEBUG: Error fetching user document: $e');
-          debugPrint("Error fetching user document: $e");
           setState(() {
             _currentUsername = firebaseUser.uid;
           });
         }
       } else {
         // No phone number, fallback to UID
-        print('🔍 DEBUG: No phone number, using Firebase UID as fallback');
         setState(() {
           _currentUsername = firebaseUser.uid;
         });
       }
     } else {
       // Not signed in — leave _currentUsername null
-      print('🔍 DEBUG: No Firebase user, leaving _currentUsername null');
     }
-    print(
-      '🔍 DEBUG: _initCurrentUser completed, _currentUsername: $_currentUsername',
-    );
   }
 
   // --- Helpers ---
@@ -205,8 +181,7 @@ class _GroupDetailPageState extends State<GroupDetailPage>
       }, SetOptions(merge: true));
 
       _showSnack('@$username added to the group');
-    } catch (e, st) {
-      debugPrint('addMember error: $e\n$st');
+    } catch (e) {
       _showSnack('Failed to add member', error: true);
     }
   }
@@ -317,15 +292,13 @@ class _GroupDetailPageState extends State<GroupDetailPage>
       _showSnack('You left ${widget.groupName}');
       // optionally pop back to groups list
       Navigator.pop(context);
-    } catch (e, st) {
-      debugPrint('leaveGroup error: $e\n$st');
+    } catch (e) {
       _showSnack('Failed to leave group', error: true);
     }
   }
 
   // FEED TAB
   Widget buildFeedTab() {
-    print('🔍 DEBUG: buildFeedTab() called');
     return StreamBuilder<QuerySnapshot>(
       stream: _firestore
           .collection('groups')
@@ -334,21 +307,14 @@ class _GroupDetailPageState extends State<GroupDetailPage>
           .orderBy('timestamp', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
-        print(
-          '🔍 DEBUG: Feed StreamBuilder - ConnectionState: ${snapshot.connectionState}, HasData: ${snapshot.hasData}',
-        );
-
         if (snapshot.connectionState == ConnectionState.waiting) {
-          print('🔍 DEBUG: Feed showing loading indicator');
           return const Center(child: CircularProgressIndicator());
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          print('🔍 DEBUG: Feed showing no expenses message');
           return const Center(child: Text('No expenses yet'));
         }
 
         final expenses = snapshot.data!.docs;
-        print('🔍 DEBUG: Feed building list with ${expenses.length} expenses');
         return ListView.builder(
           itemCount: expenses.length,
           itemBuilder: (context, index) {
@@ -376,7 +342,6 @@ class _GroupDetailPageState extends State<GroupDetailPage>
 
   // LEADERBOARD TAB
   Widget buildLeaderboardTab() {
-    print('🔍 DEBUG: buildLeaderboardTab() called');
     return StreamBuilder<QuerySnapshot>(
       stream: _firestore
           .collection('groups')
@@ -385,16 +350,10 @@ class _GroupDetailPageState extends State<GroupDetailPage>
           .orderBy('karmaPoints', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
-        print(
-          '🔍 DEBUG: Leaderboard StreamBuilder - ConnectionState: ${snapshot.connectionState}, HasData: ${snapshot.hasData}',
-        );
-
         if (snapshot.connectionState == ConnectionState.waiting) {
-          print('🔍 DEBUG: Leaderboard showing loading indicator');
           return const Center(child: CircularProgressIndicator());
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          print('🔍 DEBUG: Leaderboard showing no data message');
           return const Center(child: Text('No leaderboard data'));
         }
 
@@ -408,9 +367,6 @@ class _GroupDetailPageState extends State<GroupDetailPage>
           };
         }).toList();
 
-        print(
-          '🔍 DEBUG: Leaderboard building list with ${members.length} members',
-        );
         return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: members.length + 1,
@@ -469,9 +425,6 @@ class _GroupDetailPageState extends State<GroupDetailPage>
   // ---------------- UI ----------------
   @override
   Widget build(BuildContext context) {
-    print(
-      '🔍 DEBUG: GroupDetailPage build() called, currentUsername: $_currentUsername',
-    );
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.groupName),

@@ -36,7 +36,7 @@ class _GroupsPageState extends State<GroupsPage> {
           });
         }
       } catch (e) {
-        debugPrint("Error fetching current user: $e");
+        // Error handling without debug output
       }
     }
   }

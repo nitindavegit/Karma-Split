@@ -9,6 +9,7 @@ class LoginPage extends StatefulWidget {
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
+
 class _LoginPageState extends State<LoginPage> {
   final _mobileController = TextEditingController();
   final _otpController = TextEditingController();
@@ -72,13 +73,10 @@ class _LoginPageState extends State<LoginPage> {
       smsCode: smsCode,
     );
     try {
-      debugPrint("Attempting to sign in with credential");
       await _auth.signInWithCredential(credential);
-      debugPrint("Signed in successfully");
       setState(() => _isLoading = false);
       _onVerificationSuccess();
     } catch (e) {
-      debugPrint("Error signing in: $e");
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Invalid OTP. Please try again.')),
@@ -87,36 +85,28 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _onVerificationSuccess() async {
-    debugPrint("_onVerificationSuccess called");
     final user = _auth.currentUser;
-    debugPrint("Current user: ${user?.uid}");
     if (user == null) {
-      debugPrint("User is null, returning");
       return;
     }
 
     try {
       final phone = "+91${_mobileController.text.trim()}";
-      debugPrint("Checking for user with phone: $phone");
       final querySnapshot = await FirebaseFirestore.instance
           .collection('users')
           .where('phone', isEqualTo: phone)
           .get();
-      debugPrint("Query result: ${querySnapshot.docs.length} docs found");
       if (querySnapshot.docs.isNotEmpty) {
-        debugPrint("User found, navigating to MainPage");
         Navigator.of(
           context,
         ).pushReplacement(MaterialPageRoute(builder: (_) => const MainPage()));
       } else {
-        debugPrint("User not found, signing out");
         await _auth.signOut();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Account not found. Please sign up.')),
         );
       }
     } catch (e) {
-      debugPrint("Error in _onVerificationSuccess: $e");
       await _auth.signOut();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error checking account: ${e.toString()}')),

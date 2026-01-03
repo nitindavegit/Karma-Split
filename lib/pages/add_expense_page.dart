@@ -215,21 +215,11 @@ class _AddExpensePageState extends State<AddExpensePage> {
     String groupId,
     String expenseId,
   ) async {
-    print('🔍 DEBUG: Starting image upload process...');
-
     try {
       // Cloudinary configuration
       final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? '';
       final uploadPreset = dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? '';
       final folder = dotenv.env['CLOUDINARY_FOLDER'] ?? '';
-
-      print(
-        '🔍 DEBUG: Cloudinary config - Cloud: $cloudName, Preset: $uploadPreset, Folder: $folder',
-      );
-      print(
-        '🔍 DEBUG: Upload details - GroupID: $groupId, ExpenseID: $expenseId',
-      );
-      print('🔍 DEBUG: Image file path: ${imageFile.path}');
 
       // Create multipart request
       final request = Uri.parse(
@@ -241,10 +231,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
         'public_id': '${groupId}_${expenseId}_expensephoto',
       };
 
-      print('🔍 DEBUG: Request fields: $requestFields');
-
       final imageBytes = await imageFile.readAsBytes();
-      print('🔍 DEBUG: Image file size: ${imageBytes.length} bytes');
 
       final requestMultipart = http.MultipartRequest('POST', request);
       requestMultipart.fields.addAll(requestFields);
@@ -256,48 +243,28 @@ class _AddExpensePageState extends State<AddExpensePage> {
         ),
       );
 
-      print('🔍 DEBUG: Making HTTP request to Cloudinary...');
       final response = await requestMultipart.send();
-
-      print('🔍 DEBUG: Response status code: ${response.statusCode}');
-      print('🔍 DEBUG: Response headers: ${response.headers}');
 
       if (response.statusCode == 200) {
         final responseData = await response.stream.bytesToString();
-        print('🔍 DEBUG: Response data: $responseData');
-
         final jsonResponse = json.decode(responseData);
         final secureUrl = jsonResponse['secure_url'];
-        print('🔍 DEBUG: Upload successful! Secure URL: $secureUrl');
 
         return secureUrl;
       } else {
         final responseData = await response.stream.bytesToString();
-        print('🔍 DEBUG: Upload failed with status ${response.statusCode}');
-        print('🔍 DEBUG: Error response data: $responseData');
-
         throw Exception(
           'Upload failed with status: ${response.statusCode}. Response: $responseData',
         );
       }
     } catch (e) {
-      print('🔍 DEBUG: Exception occurred during upload: $e');
       throw Exception('Failed to upload image: $e');
     }
   }
 
   // SUBMIT (Firebase Implementation)
   Future<void> _onSubmit() async {
-    print('🔍 DEBUG: Starting expense submission process...');
-    print(
-      '🔍 DEBUG: Amount: ${_amountController.text}, Description: ${_descriptionController.text}',
-    );
-    print('🔍 DEBUG: Selected Group: $_selectedGroup ($_selectedGroupId)');
-    print('🔍 DEBUG: Tagged People: $_taggedPeople');
-    print('🔍 DEBUG: Image selected: ${_selectedImage != null ? 'Yes' : 'No'}');
-
     if (!_isButtonEnabled || _isSubmitting) {
-      print('🔍 DEBUG: Submit button not enabled or already submitting');
       return;
     }
 
@@ -341,20 +308,15 @@ class _AddExpensePageState extends State<AddExpensePage> {
       // Upload image if selected
       String imageUrl = '';
       if (_selectedImage != null) {
-        print('🔍 DEBUG: Starting image upload for expense...');
         try {
           imageUrl = await _uploadImageToCloudinary(
             _selectedImage!,
             _selectedGroupId!,
             expenseId,
           );
-          print('🔍 DEBUG: Image upload completed successfully');
         } catch (e) {
-          print('🔍 DEBUG: Image upload failed: $e');
           rethrow; // Re-throw to be caught by outer catch block
         }
-      } else {
-        print('🔍 DEBUG: No image selected for upload');
       }
 
       // Calculate karma points using the split formula
@@ -389,7 +351,6 @@ class _AddExpensePageState extends State<AddExpensePage> {
       }, SetOptions(merge: true));
 
       // Update group statistics - use total amount instead of karma points for total group karma
-      print('🔍 DEBUG: Updating group statistics with amount: $totalAmount');
       await FirebaseFirestore.instance
           .collection('groups')
           .doc(_selectedGroupId!)
@@ -401,7 +362,6 @@ class _AddExpensePageState extends State<AddExpensePage> {
           }, SetOptions(merge: true));
 
       // Update member ranks in the group
-      print('🔍 DEBUG: Updating member ranks in group');
       await _updateGroupMemberRanks(_selectedGroupId!);
 
       // Update creator member statistics
@@ -417,9 +377,6 @@ class _AddExpensePageState extends State<AddExpensePage> {
           }, SetOptions(merge: true));
 
       // Update user's totalKarmaPoints in users collection (calculated from all groups)
-      print(
-        '🔍 DEBUG: Updating totalKarmaPoints in users collection for creator',
-      );
       await _updateUserTotalKarmaPointsInCollection(username);
 
       // Update statistics for tagged people (they owe money, so negative karma)
@@ -437,20 +394,13 @@ class _AddExpensePageState extends State<AddExpensePage> {
             }, SetOptions(merge: true));
 
         // Update totalKarmaPoints in users collection for tagged people too
-        print(
-          '🔍 DEBUG: Updating totalKarmaPoints in users collection for tagged person: $taggedPerson',
-        );
         await _updateUserTotalKarmaPointsInCollection(taggedPerson);
       }
 
       // Update top contributor information (after all member statistics are updated)
-      print(
-        '🔍 DEBUG: Updating top contributor after all member statistics are updated',
-      );
       await _updateTopContributor(_selectedGroupId!, username, userPhotoUrl);
 
       // Show success message
-      print('🔍 DEBUG: Showing success snackbar...');
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Expense added successfully!'),
@@ -459,9 +409,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
       );
 
       // Clear form and navigate back
-      print('🔍 DEBUG: Clearing form...');
       _clearForm();
-      print('🔍 DEBUG: Form cleared, navigating back...');
 
       // Call the callback to navigate to Groups page if provided
       if (widget.onExpenseAdded != null) {
@@ -470,11 +418,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
         // Fallback to Navigator.pop for backward compatibility
         Navigator.pop(context);
       }
-      print('🔍 DEBUG: Navigation completed');
     } catch (e) {
-      print('🔍 DEBUG: Caught exception in _onSubmit: $e');
-      print('🔍 DEBUG: Exception type: ${e.runtimeType}');
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Failed to add expense: ${e.toString()}'),
@@ -491,12 +435,8 @@ class _AddExpensePageState extends State<AddExpensePage> {
   }
 
   void _clearForm() {
-    print('🔍 DEBUG: _clearForm() called');
-    print('🔍 DEBUG: Clearing amount controller...');
     _amountController.clear();
-    print('🔍 DEBUG: Clearing description controller...');
     _descriptionController.clear();
-    print('🔍 DEBUG: Resetting state variables...');
     setState(() {
       _selectedGroup = null;
       _selectedGroupId = null;
@@ -504,7 +444,6 @@ class _AddExpensePageState extends State<AddExpensePage> {
       _taggedPeople = []; // Clear tagged people as well
       _isSubmitting = false;
     });
-    print('🔍 DEBUG: _clearForm() completed');
   }
 
   // Helper method to get filtered group members (excluding current user)
@@ -523,10 +462,6 @@ class _AddExpensePageState extends State<AddExpensePage> {
     String currentUserPhotoUrl,
   ) async {
     try {
-      print(
-        '🔍 DEBUG: Querying current leaderboard to determine top contributor',
-      );
-
       // Get all members ordered by karma points (highest first)
       final membersSnapshot = await FirebaseFirestore.instance
           .collection('groups')
@@ -537,7 +472,6 @@ class _AddExpensePageState extends State<AddExpensePage> {
           .get();
 
       if (membersSnapshot.docs.isEmpty) {
-        print('🔍 DEBUG: No members found in group');
         return;
       }
 
@@ -550,10 +484,6 @@ class _AddExpensePageState extends State<AddExpensePage> {
         topMemberData['photoUrl'] as String?,
       );
 
-      print(
-        '🔍 DEBUG: Current top contributor: $topMemberUsername with $topMemberKarmaPoints karma points',
-      );
-
       // Get current group data to compare
       final groupDoc = await FirebaseFirestore.instance
           .collection('groups')
@@ -561,7 +491,6 @@ class _AddExpensePageState extends State<AddExpensePage> {
           .get();
 
       if (!groupDoc.exists) {
-        print('🔍 DEBUG: Group document not found');
         return;
       }
 
@@ -579,21 +508,12 @@ class _AddExpensePageState extends State<AddExpensePage> {
       if (currentTopContributor == null) {
         // No current top contributor
         shouldUpdate = true;
-        print(
-          '🔍 DEBUG: No current top contributor, setting $topMemberUsername as top contributor',
-        );
       } else if (topMemberUsername != currentTopContributor) {
         // Different person is now the top contributor
         shouldUpdate = true;
-        print(
-          '🔍 DEBUG: Top contributor changed from $currentTopContributor to $topMemberUsername',
-        );
       } else if (topMemberKarmaPoints != currentTopContributorKarmaPoints) {
         // Same person but karma points changed
         shouldUpdate = true;
-        print(
-          '🔍 DEBUG: Top contributor karma points updated for $topMemberUsername',
-        );
       }
 
       if (shouldUpdate) {
@@ -603,15 +523,8 @@ class _AddExpensePageState extends State<AddExpensePage> {
           'topContributorKarmaPoints': newTopContributorKarmaPoints,
           'topContributorImageUrl': newTopContributorImageUrl,
         }, SetOptions(merge: true));
-
-        print(
-          '🔍 DEBUG: Updated top contributor to $newTopContributor with $newTopContributorKarmaPoints karma points',
-        );
-      } else {
-        print('🔍 DEBUG: Top contributor information is already up to date');
       }
     } catch (e) {
-      print('🔍 DEBUG: Error updating top contributor: $e');
       // Don't throw error to avoid breaking the main flow
     }
   }
@@ -651,13 +564,8 @@ class _AddExpensePageState extends State<AddExpensePage> {
             .collection('members')
             .doc(username)
             .set({'rank': rank}, SetOptions(merge: true));
-
-        print('🔍 DEBUG: Updated rank for $username: $rank');
       }
-
-      print('🔍 DEBUG: Updated ranks for ${allMembers.length} members');
     } catch (e) {
-      print('🔍 DEBUG: Error updating member ranks: $e');
       // Don't throw error to avoid breaking the main flow
     }
   }
@@ -686,15 +594,8 @@ class _AddExpensePageState extends State<AddExpensePage> {
             .set({
               'totalKarmaPoints': totalKarmaPoints,
             }, SetOptions(merge: true));
-
-        print(
-          '🔍 DEBUG: Updated totalKarmaPoints for $username to $totalKarmaPoints in users collection',
-        );
       }
     } catch (e) {
-      print(
-        '🔍 DEBUG: Error updating totalKarmaPoints in users collection: $e',
-      );
       // Don't throw error to avoid breaking the main flow
     }
   }
