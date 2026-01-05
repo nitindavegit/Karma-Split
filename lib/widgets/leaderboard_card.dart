@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:karma_split/utils/number_formatter.dart';
 
 class LeaderboardCard extends StatelessWidget {
   final int rank;
@@ -54,7 +55,7 @@ class LeaderboardCard extends StatelessWidget {
             ),
             // Points
             Text(
-              '$points pts',
+              NumberFormatter.formatKarmaPoints(points),
               style: const TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
