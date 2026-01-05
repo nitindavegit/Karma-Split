@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:karma_split/utils/number_formatter.dart';
 
 class FeedCard extends StatelessWidget {
   final String username; // of the person creating expense
@@ -72,7 +73,7 @@ class FeedCard extends StatelessWidget {
 
             // Amount
             Text(
-              "₹$amount",
+              NumberFormatter.formatCurrency(amount),
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 22,
@@ -121,7 +122,8 @@ class FeedCard extends StatelessWidget {
                       ),
                     ),
                     TextSpan(
-                      text: '\n₹${splitAmount.toStringAsFixed(2)} each',
+                      text:
+                          '\n${NumberFormatter.formatSplitAmount(splitAmount)}',
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -138,7 +140,7 @@ class FeedCard extends StatelessWidget {
             // Karma points
             Center(
               child: Text(
-                "$karmaPoints Karma Points",
+                NumberFormatter.formatKarmaPointsDisplay(karmaPoints),
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.orange,
