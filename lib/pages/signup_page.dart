@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:karma_split/pages/main_page.dart';
+import 'package:karma_split/pages/auth_choice_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
@@ -470,7 +471,11 @@ class _SignupPageState extends State<SignupPage> {
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop(true); // Exit signup
+                    Navigator.of(context).pop(true); // Close the dialog
+                    // Navigate back to AuthChoicePage instead of just popping
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const AuthChoicePage()),
+                    );
                   },
                   child: const Text('Cancel Signup'),
                 ),
@@ -483,15 +488,20 @@ class _SignupPageState extends State<SignupPage> {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
+    return PopScope(
+      canPop: !(_otpSent || _otpVerified),
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
         // Show confirmation dialog when trying to go back
         if (_otpSent || _otpVerified) {
-          // If user is in middle of signup process, show confirmation
-          return await _showBackConfirmationDialog();
-        } else {
-          // If user hasn't started OTP process, allow back navigation
-          return true;
+          final currentContext = context;
+          final result = await _showBackConfirmationDialog();
+          if (result && currentContext.mounted) {
+            // Navigate back to AuthChoicePage
+            Navigator.of(currentContext).pushReplacement(
+              MaterialPageRoute(builder: (_) => const AuthChoicePage()),
+            );
+          }
         }
       },
       child: Scaffold(
