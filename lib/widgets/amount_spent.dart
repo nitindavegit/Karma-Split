@@ -54,7 +54,7 @@ class AmountSpent extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: Colors.blue, width: 1),
               ),
-              hintText: '0.00',
+              hintText: '0.0',
               hintStyle: TextStyle(color: Colors.grey, fontSize: 24),
             ),
           ),
