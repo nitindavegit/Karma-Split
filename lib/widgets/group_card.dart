@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:karma_split/pages/group_detail_page.dart';
+import 'package:karma_split/utils/number_formatter.dart';
 
 class GroupCard extends StatelessWidget {
   final String groupId;
@@ -94,7 +95,7 @@ class GroupCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     // total karma points
                     Text(
-                      "$totalKarmaPoints karma",
+                      NumberFormatter.formatKarma(totalKarmaPoints),
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
@@ -142,7 +143,9 @@ class GroupCard extends StatelessWidget {
                   children: [
                     // points of top contributor
                     Text(
-                      "$topContributorKarmaPoints pts",
+                      NumberFormatter.formatKarmaPoints(
+                        topContributorKarmaPoints,
+                      ),
                       style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
