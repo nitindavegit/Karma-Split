@@ -5,6 +5,7 @@ import 'package:karma_split/widgets/ranking_card.dart';
 import 'package:karma_split/widgets/recent_activity_card.dart';
 import 'package:karma_split/widgets/stat_card.dart';
 import 'package:karma_split/utils/karma_calculator.dart';
+import 'package:karma_split/utils/number_formatter.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -127,7 +128,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   Expanded(
                     child: StatCard(
-                      value: totalKarmaPoints.toStringAsFixed(1),
+                      value: NumberFormatter.formatDouble(totalKarmaPoints),
                       label: "Total Karma Points",
                       icon: Icons.emoji_events,
                       iconColor: Colors.orange,
@@ -158,7 +159,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: StatCard(
-                      value: "₹${userData!['totalSpent'] ?? 0}",
+                      value: NumberFormatter.formatCurrency(
+                        userData!['totalSpent'] ?? 0,
+                      ),
                       label: "Total Spent",
                       icon: Icons.currency_rupee,
                       iconColor: Colors.red,
@@ -276,7 +279,9 @@ class _ProfilePageState extends State<ProfilePage> {
         final rankIndex = allMembers.indexWhere((m) => m.id == username);
         final rank = rankIndex == -1 ? "?" : (rankIndex + 1).toString();
 
-        final points = (memberData['karmaPoints'] ?? 0).toStringAsFixed(1);
+        final points = NumberFormatter.formatDynamic(
+          memberData['karmaPoints'] ?? 0,
+        );
 
         cards.add(
           Padding(
@@ -336,8 +341,9 @@ class _ProfilePageState extends State<ProfilePage> {
       return Padding(
         padding: const EdgeInsets.only(bottom: 12),
         child: RecentActivityCard(
-          title: "₹${data['amount']} in ${activity['groupName']}",
-          points: "+${data['karmaPoints']}",
+          title:
+              "${NumberFormatter.formatCurrency(data['amount'])} in ${activity['groupName']}",
+          points: "+${NumberFormatter.formatDynamic(data['karmaPoints'])}",
           subtitle: data['description'] ?? "",
         ),
       );
