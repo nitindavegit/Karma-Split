@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:karma_split/widgets/feed_card.dart';
 import 'package:karma_split/widgets/leaderboard_card.dart';
+import 'package:karma_split/utils/number_formatter.dart';
 
 class GroupDetailPage extends StatefulWidget {
   final String groupId; // Firestore doc id
@@ -408,7 +409,7 @@ class _GroupDetailPageState extends State<GroupDetailPage>
                 return Padding(
                   padding: const EdgeInsets.only(top: 16.0),
                   child: Text(
-                    'Total Karma: ${total.toStringAsFixed(2)}',
+                    'Total Karma: ${NumberFormatter.formatDynamic(total)}',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
