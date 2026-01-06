@@ -269,8 +269,9 @@ class _AddGroupPageState extends State<AddGroupPage> {
         'totalKarmaPoints': 0.0,
         'lastActivity': FieldValue.serverTimestamp(),
         'createdAt': FieldValue.serverTimestamp(),
-        'topContributor': '',
-        'topContributorImageUrl': '',
+        'topContributor':
+            _creatorData?['name'] ?? _creatorData?['username'] ?? '',
+        'topContributorImageUrl': _creatorData?['photoUrl'] ?? '',
         'topContributorKarmaPoints': 0.0,
         'isActive': true,
       };
