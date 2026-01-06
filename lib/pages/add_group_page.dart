@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:karma_split/utils/image_compressor.dart';
 
 class AddGroupPage extends StatefulWidget {
   const AddGroupPage({super.key});
@@ -117,6 +118,9 @@ class _AddGroupPageState extends State<AddGroupPage> {
     String groupId,
   ) async {
     try {
+      // Compress the image before uploading
+      final compressedFile = await compressImage(imageFile, quality: 80);
+
       final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? '';
       final uploadPreset = dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? '';
       final folder = dotenv.env['CLOUDINARY_FOLDER'] ?? '';
@@ -130,7 +134,7 @@ class _AddGroupPageState extends State<AddGroupPage> {
         'public_id': '${groupId}_grouppicture',
       };
 
-      final imageBytes = await imageFile.readAsBytes();
+      final imageBytes = await compressedFile.readAsBytes();
       final requestMultipart = http.MultipartRequest('POST', request);
       requestMultipart.fields.addAll(requestFields);
       requestMultipart.files.add(

@@ -13,6 +13,7 @@ import 'package:karma_split/widgets/proof_image.dart';
 import 'package:karma_split/widgets/select_group.dart';
 import 'package:karma_split/widgets/tag_people_card.dart';
 import 'package:karma_split/utils/karma_calculator.dart';
+import 'package:karma_split/utils/image_compressor.dart';
 
 class AddExpensePage extends StatefulWidget {
   final VoidCallback? onExpenseAdded;
@@ -216,6 +217,9 @@ class _AddExpensePageState extends State<AddExpensePage> {
     String expenseId,
   ) async {
     try {
+      // Compress the image before uploading
+      final compressedFile = await compressImage(imageFile, quality: 80);
+
       // Cloudinary configuration
       final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? '';
       final uploadPreset = dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? '';
@@ -231,7 +235,7 @@ class _AddExpensePageState extends State<AddExpensePage> {
         'public_id': '${groupId}_${expenseId}_expensephoto',
       };
 
-      final imageBytes = await imageFile.readAsBytes();
+      final imageBytes = await compressedFile.readAsBytes();
 
       final requestMultipart = http.MultipartRequest('POST', request);
       requestMultipart.fields.addAll(requestFields);

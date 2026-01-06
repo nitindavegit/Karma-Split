@@ -10,6 +10,7 @@ import 'package:karma_split/pages/main_page.dart';
 import 'package:karma_split/pages/auth_choice_page.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:karma_split/utils/image_compressor.dart';
 
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -270,6 +271,9 @@ class _SignupPageState extends State<SignupPage> {
   // IMAGE UPLOAD TO CLOUDINARY
   Future<String> _uploadImageToCloudinary(File imageFile, String userId) async {
     try {
+      // Compress the image before uploading
+      final compressedFile = await compressImage(imageFile, quality: 80);
+
       // Cloudinary configuration
       final cloudName = dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? '';
       final uploadPreset = dotenv.env['CLOUDINARY_UPLOAD_PRESET'] ?? '';
@@ -285,7 +289,7 @@ class _SignupPageState extends State<SignupPage> {
         'public_id': '${userId}_profilepicture',
       };
 
-      final imageBytes = await imageFile.readAsBytes();
+      final imageBytes = await compressedFile.readAsBytes();
 
       final requestMultipart = http.MultipartRequest('POST', request);
       requestMultipart.fields.addAll(requestFields);
