@@ -19,11 +19,45 @@ class _AddGroupPageState extends State<AddGroupPage> {
   final TextEditingController _groupNameController = TextEditingController();
   final TextEditingController _memberController = TextEditingController();
   final List<Map<String, dynamic>> members = [];
+  final List<Map<String, dynamic>> displayMembers = [];
   File? _groupImage;
   bool _isLoading = false;
 
   // Get current user from Firebase Auth
   User? get _currentUser => FirebaseAuth.instance.currentUser;
+
+  // Store creator info for backend
+  Map<String, dynamic>? _creatorData;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCreatorData();
+  }
+
+  Future<void> _loadCreatorData() async {
+    if (_currentUser != null) {
+      final phone = _currentUser!.phoneNumber;
+      if (phone != null) {
+        final userQuery = await FirebaseFirestore.instance
+            .collection('users')
+            .where('phone', isEqualTo: phone)
+            .limit(1)
+            .get();
+
+        if (userQuery.docs.isNotEmpty) {
+          final userData = userQuery.docs.first.data();
+          setState(() {
+            _creatorData = {
+              'username': userData['username'],
+              'name': userData['name'] ?? userData['username'],
+              'photoUrl': userData['photoUrl'] ?? '',
+            };
+          });
+        }
+      }
+    }
+  }
 
   Future<void> _pickImage() async {
     showDialog(
@@ -39,8 +73,9 @@ class _AddGroupPageState extends State<AddGroupPage> {
                 source: ImageSource.camera,
                 imageQuality: 80,
               );
-              if (picked != null)
+              if (picked != null) {
                 setState(() => _groupImage = File(picked.path));
+              }
             },
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -58,8 +93,9 @@ class _AddGroupPageState extends State<AddGroupPage> {
                 source: ImageSource.gallery,
                 imageQuality: 80,
               );
-              if (picked != null)
+              if (picked != null) {
                 setState(() => _groupImage = File(picked.path));
+              }
             },
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -123,15 +159,14 @@ class _AddGroupPageState extends State<AddGroupPage> {
     final username = _memberController.text.trim();
     if (username.isEmpty) return;
 
-    // Don't allow adding self
-    if (_currentUser != null) {
-      final phone = _currentUser!.phoneNumber;
-      if (phone != null && phone.contains(username)) {
+    // Don't allow adding creator (self)
+    if (_creatorData != null && username == _creatorData!['username']) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("❌ You cannot add yourself")),
         );
-        return;
       }
+      return;
     }
 
     final query = await FirebaseFirestore.instance
@@ -152,7 +187,9 @@ class _AddGroupPageState extends State<AddGroupPage> {
     final userDoc = query.docs.first;
     final userData = userDoc.data();
 
-    if (members.any((m) => m['username'] == username)) {
+    // Check in both members and displayMembers lists
+    if (members.any((m) => m['username'] == username) ||
+        displayMembers.any((m) => m['username'] == username)) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -162,7 +199,7 @@ class _AddGroupPageState extends State<AddGroupPage> {
     }
 
     setState(() {
-      members.add({
+      displayMembers.add({
         'username': username,
         'photoUrl': userData['photoUrl'] ?? '',
         'name': userData['name'] ?? username,
@@ -173,14 +210,20 @@ class _AddGroupPageState extends State<AddGroupPage> {
 
   Future<void> createGroup() async {
     final groupName = _groupNameController.text.trim();
-    if (groupName.isEmpty || members.isEmpty) {
+    if (groupName.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Please enter group name and add at least one member",
-            ),
-          ),
+          const SnackBar(content: Text("Please enter group name")),
+        );
+      }
+      return;
+    }
+
+    // Validate group picture is mandatory
+    if (_groupImage == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please select a group picture")),
         );
       }
       return;
@@ -191,49 +234,34 @@ class _AddGroupPageState extends State<AddGroupPage> {
     try {
       final docRef = FirebaseFirestore.instance.collection("groups").doc();
 
-      // Upload group image to Cloudinary
+      // Upload group image to Cloudinary (mandatory now)
       String? uploadedUrl;
-      if (_groupImage != null) {
-        uploadedUrl = await _uploadImageToCloudinary(_groupImage!, docRef.id);
+      uploadedUrl = await _uploadImageToCloudinary(_groupImage!, docRef.id);
+
+      // Build final members list with creator first, then other members
+      final allMembers = <Map<String, dynamic>>[];
+      if (_creatorData != null) {
+        allMembers.add(_creatorData!);
       }
+      allMembers.addAll(displayMembers);
 
-      // Get current user data for creator
-      String? creatorUsername;
-      String? creatorName;
-      String? creatorPhotoUrl;
-
-      if (_currentUser != null) {
-        final phone = _currentUser!.phoneNumber;
-        final userQuery = await FirebaseFirestore.instance
-            .collection('users')
-            .where('phone', isEqualTo: phone)
-            .limit(1)
-            .get();
-
-        if (userQuery.docs.isNotEmpty) {
-          final userData = userQuery.docs.first.data();
-          creatorUsername = userData['username'];
-          creatorName = userData['name'];
-          creatorPhotoUrl = userData['photoUrl'] ?? '';
-
-          // Add creator to members if not already present
-          if (!members.any((m) => m['username'] == creatorUsername)) {
-            members.insert(0, {
-              'username': creatorUsername,
-              'photoUrl': creatorPhotoUrl,
-              'name': creatorName ?? creatorUsername,
-            });
-          }
+      // Validate at least creator + 1 member
+      if (allMembers.length < 2) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Please add at least one member")),
+          );
         }
+        return;
       }
 
       // Create group document
       final groupData = {
         'id': docRef.id,
         'groupName': groupName,
-        'groupImageUrl': uploadedUrl ?? '',
-        'createdBy': creatorUsername ?? members[0]['username'],
-        'members': members.map((m) => m['username']).toList(),
+        'groupImageUrl': uploadedUrl,
+        'createdBy': _creatorData?['username'] ?? allMembers[0]['username'],
+        'members': allMembers.map((m) => m['username']).toList(),
         'totalKarmaPoints': 0.0,
         'lastActivity': FieldValue.serverTimestamp(),
         'createdAt': FieldValue.serverTimestamp(),
@@ -245,8 +273,8 @@ class _AddGroupPageState extends State<AddGroupPage> {
 
       await docRef.set(groupData);
 
-      // Create member subcollection documents
-      for (final member in members) {
+      // Create member subcollection documents for ALL members (including creator)
+      for (final member in allMembers) {
         await docRef.collection('members').doc(member['username']).set({
           'name': member['name'] ?? member['username'],
           'photoUrl': member['photoUrl'] ?? '',
@@ -359,8 +387,8 @@ class _AddGroupPageState extends State<AddGroupPage> {
               const SizedBox(height: 8),
               Center(
                 child: Text(
-                  'Tap to add group picture',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  'Group picture is mandatory',
+                  style: TextStyle(color: Colors.red[600], fontSize: 12),
                 ),
               ),
               const SizedBox(height: 30),
@@ -452,17 +480,100 @@ class _AddGroupPageState extends State<AddGroupPage> {
               ),
               const SizedBox(height: 16),
 
-              // Members List
-              if (members.isNotEmpty) ...[
+              // Creator badge (always visible)
+              if (_creatorData != null) ...[
                 Text(
-                  'Members (${members.length})',
+                  'Members (${displayMembers.length + 1})', // +1 for creator
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Colors.grey[700],
                   ),
                 ),
                 const SizedBox(height: 12),
-                ...members.map(
+                // Show creator badge
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.deepPurple.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.deepPurple.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundImage:
+                            _creatorData!['photoUrl'] != null &&
+                                _creatorData!['photoUrl'].isNotEmpty
+                            ? NetworkImage(_creatorData!['photoUrl'])
+                            : null,
+                        backgroundColor: Colors.deepPurple[100],
+                        child:
+                            _creatorData!['photoUrl'] == null ||
+                                _creatorData!['photoUrl'].isEmpty
+                            ? const Icon(Icons.person, color: Colors.deepPurple)
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  _creatorData!['name'] ??
+                                      _creatorData!['username'],
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.deepPurple,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.deepPurple,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'You',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              '@${_creatorData!['username']}',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
+              // Show added members
+              if (displayMembers.isNotEmpty) ...[
+                ...displayMembers.map(
                   (m) => Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.symmetric(
@@ -518,7 +629,7 @@ class _AddGroupPageState extends State<AddGroupPage> {
                           icon: Icon(Icons.close, color: Colors.grey[400]),
                           onPressed: () {
                             setState(() {
-                              members.remove(m);
+                              displayMembers.remove(m);
                             });
                           },
                         ),
