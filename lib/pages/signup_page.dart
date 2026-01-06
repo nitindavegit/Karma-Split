@@ -470,12 +470,18 @@ class _SignupPageState extends State<SignupPage> {
                   child: const Text('Continue Signup'),
                 ),
                 TextButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    final navigatorContext = this.context;
                     Navigator.of(context).pop(true); // Close the dialog
-                    // Navigate back to AuthChoicePage instead of just popping
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const AuthChoicePage()),
-                    );
+                    // Sign out the user and navigate to AuthChoicePage
+                    await _auth.signOut();
+                    if (mounted && navigatorContext.mounted) {
+                      Navigator.of(navigatorContext).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (_) => const AuthChoicePage(),
+                        ),
+                      );
+                    }
                   },
                   child: const Text('Cancel Signup'),
                 ),
@@ -494,11 +500,11 @@ class _SignupPageState extends State<SignupPage> {
         if (didPop) return;
         // Show confirmation dialog when trying to go back
         if (_otpSent || _otpVerified) {
-          final currentContext = context;
+          final dialogContext = context;
           final result = await _showBackConfirmationDialog();
-          if (result && currentContext.mounted) {
+          if (result && dialogContext.mounted) {
             // Navigate back to AuthChoicePage
-            Navigator.of(currentContext).pushReplacement(
+            Navigator.of(dialogContext).pushReplacement(
               MaterialPageRoute(builder: (_) => const AuthChoicePage()),
             );
           }
