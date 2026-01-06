@@ -146,8 +146,10 @@ class _LoginPageState extends State<LoginPage> {
           .get();
       if (querySnapshot.docs.isNotEmpty) {
         if (mounted) {
-          Navigator.of(context).pushReplacement(
+          // Clear the entire navigation stack and go to MainPage
+          Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(builder: (_) => const MainPage()),
+            (route) => false,
           );
         }
       } else {

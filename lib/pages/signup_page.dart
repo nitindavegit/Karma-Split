@@ -375,9 +375,11 @@ class _SignupPageState extends State<SignupPage> {
       _showSuccessSnackBar('Account created successfully!');
 
       if (mounted) {
-        Navigator.of(
-          context,
-        ).pushReplacement(MaterialPageRoute(builder: (_) => const MainPage()));
+        // Clear the entire navigation stack and go to MainPage
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainPage()),
+          (route) => false,
+        );
       }
     } catch (e) {
       setState(() => _isLoading = false);
