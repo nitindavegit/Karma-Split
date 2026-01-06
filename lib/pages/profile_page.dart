@@ -6,6 +6,7 @@ import 'package:karma_split/widgets/recent_activity_card.dart';
 import 'package:karma_split/widgets/stat_card.dart';
 import 'package:karma_split/utils/karma_calculator.dart';
 import 'package:karma_split/utils/number_formatter.dart';
+import 'package:karma_split/pages/auth_choice_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -19,6 +20,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String? username;
   double totalKarmaPoints = 0.0; // Calculated from all groups
   bool isLoading = true;
+  bool isLoggingOut = false;
 
   @override
   void initState() {
@@ -30,7 +32,7 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null || user.phoneNumber == null) {
-        setState(() => isLoading = false);
+        if (mounted) setState(() => isLoading = false);
         return;
       }
 
@@ -40,7 +42,7 @@ class _ProfilePageState extends State<ProfilePage> {
           .get();
 
       if (snapshot.docs.isEmpty) {
-        setState(() => isLoading = false);
+        if (mounted) setState(() => isLoading = false);
         return;
       }
 
@@ -52,9 +54,9 @@ class _ProfilePageState extends State<ProfilePage> {
         username!,
       );
 
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     } catch (e) {
-      setState(() => isLoading = false);
+      if (mounted) setState(() => isLoading = false);
     }
   }
 
@@ -71,179 +73,211 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     return SafeArea(
-      child: Scaffold(
-        backgroundColor: Colors.grey[100],
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              // PROFILE CARD
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black12,
-                      blurRadius: 6,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 35,
-                      backgroundImage: (userData!["photoUrl"] ?? "") != ""
-                          ? NetworkImage(userData!["photoUrl"])
-                          : const AssetImage("assets/images/JD.jpg")
-                                as ImageProvider,
-                    ),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          userData!['name'] ?? "No Name",
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          "@$username",
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // STATS
-              Row(
-                children: [
-                  Expanded(
-                    child: StatCard(
-                      value: NumberFormatter.formatDouble(totalKarmaPoints),
-                      label: "Total Karma Points",
-                      icon: Icons.emoji_events,
-                      iconColor: Colors.orange,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: StatCard(
-                      value: "${userData!['groupsJoined'] ?? 0}",
-                      label: "Groups Joined",
-                      icon: Icons.group,
-                      iconColor: Colors.blue,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: StatCard(
-                      value: "${userData!['expensesAdded'] ?? 0}",
-                      label: "Expenses Added",
-                      icon: Icons.receipt,
-                      iconColor: Colors.green,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: StatCard(
-                      value: NumberFormatter.formatCurrency(
-                        userData!['totalSpent'] ?? 0,
-                      ),
-                      label: "Total Spent",
-                      icon: Icons.currency_rupee,
-                      iconColor: Colors.red,
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 20),
-
-              // YOUR RANKINGS
-              _sectionTitle("Your Rankings"),
-
-              StreamBuilder<QuerySnapshot>(
-                stream: groupsRef.snapshots(),
-                builder: (context, groupsSnapshot) {
-                  if (!groupsSnapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  final allGroups = groupsSnapshot.data!.docs;
-
-                  return FutureBuilder<List<Widget>>(
-                    future: _buildRankingCards(allGroups, username!),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      return Column(children: snapshot.data!);
-                    },
-                  );
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              // RECENT ACTIVITY
-              _sectionTitle("Recent Activity"),
-
-              StreamBuilder<QuerySnapshot>(
-                stream: groupsRef.snapshots(),
-                builder: (context, groupsSnapshot) {
-                  if (!groupsSnapshot.hasData) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  return FutureBuilder<List<Widget>>(
-                    future: _buildActivityCards(
-                      groupsSnapshot.data!.docs,
-                      username!,
-                    ),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      return Column(children: snapshot.data!);
-                    },
-                  );
-                },
-              ),
-
-              const SizedBox(height: 20),
-
-              // LOGOUT BUTTON
-              ElevatedButton(
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                  // AuthWrapper will handle navigation
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(
+      child: WillPopScope(
+        onWillPop: () async => !isLoggingOut,
+        child: Scaffold(
+          backgroundColor: Colors.grey[100],
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                // PROFILE CARD
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(12),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 6,
+                        offset: Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 35,
+                        backgroundImage: (userData!["photoUrl"] ?? "") != ""
+                            ? NetworkImage(userData!["photoUrl"])
+                            : const AssetImage("assets/images/JD.jpg")
+                                  as ImageProvider,
+                      ),
+                      const SizedBox(width: 16),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            userData!['name'] ?? "No Name",
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text(
+                            "@$username",
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-                child: const Text("Logout"),
-              ),
-            ],
+
+                const SizedBox(height: 20),
+
+                // STATS
+                Row(
+                  children: [
+                    Expanded(
+                      child: StatCard(
+                        value: NumberFormatter.formatDouble(totalKarmaPoints),
+                        label: "Total Karma Points",
+                        icon: Icons.emoji_events,
+                        iconColor: Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: StatCard(
+                        value: "${userData!['groupsJoined'] ?? 0}",
+                        label: "Groups Joined",
+                        icon: Icons.group,
+                        iconColor: Colors.blue,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: StatCard(
+                        value: "${userData!['expensesAdded'] ?? 0}",
+                        label: "Expenses Added",
+                        icon: Icons.receipt,
+                        iconColor: Colors.green,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: StatCard(
+                        value: NumberFormatter.formatCurrency(
+                          userData!['totalSpent'] ?? 0,
+                        ),
+                        label: "Total Spent",
+                        icon: Icons.currency_rupee,
+                        iconColor: Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                // YOUR RANKINGS
+                _sectionTitle("Your Rankings"),
+
+                StreamBuilder<QuerySnapshot>(
+                  stream: groupsRef.snapshots(),
+                  builder: (context, groupsSnapshot) {
+                    if (!groupsSnapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    final allGroups = groupsSnapshot.data!.docs;
+
+                    return FutureBuilder<List<Widget>>(
+                      future: _buildRankingCards(allGroups, username!),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+
+                        return Column(children: snapshot.data!);
+                      },
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // RECENT ACTIVITY
+                _sectionTitle("Recent Activity"),
+
+                StreamBuilder<QuerySnapshot>(
+                  stream: groupsRef.snapshots(),
+                  builder: (context, groupsSnapshot) {
+                    if (!groupsSnapshot.hasData) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    return FutureBuilder<List<Widget>>(
+                      future: _buildActivityCards(
+                        groupsSnapshot.data!.docs,
+                        username!,
+                      ),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+
+                        return Column(children: snapshot.data!);
+                      },
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                // LOGOUT BUTTON
+                ElevatedButton(
+                  onPressed: isLoggingOut
+                      ? null
+                      : () async {
+                          setState(() => isLoggingOut = true);
+                          try {
+                            await FirebaseAuth.instance.signOut();
+                            // Navigate to auth choice page
+                            if (mounted) {
+                              Navigator.of(context).pushReplacement(
+                                MaterialPageRoute(
+                                  builder: (context) => const AuthChoicePage(),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              setState(() => isLoggingOut = false);
+                            }
+                          }
+                        },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: isLoggingOut
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text("Logout"),
+                ),
+              ],
+            ),
           ),
         ),
       ),
