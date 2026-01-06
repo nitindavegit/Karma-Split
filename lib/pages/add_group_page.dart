@@ -291,6 +291,9 @@ class _AddGroupPageState extends State<AddGroupPage> {
         });
       }
 
+      // Update groupsJoined for creator and all members
+      await _updateGroupsJoinedForMembers(allMembers);
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("✅ Group '$groupName' created!")),
@@ -306,6 +309,36 @@ class _AddGroupPageState extends State<AddGroupPage> {
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _updateGroupsJoinedForMembers(
+    List<Map<String, dynamic>> members,
+  ) async {
+    for (final member in members) {
+      final username = member['username'];
+      try {
+        // Find user document by username to get the uid
+        final userQuery = await FirebaseFirestore.instance
+            .collection('users')
+            .where('username', isEqualTo: username)
+            .limit(1)
+            .get();
+
+        if (userQuery.docs.isNotEmpty) {
+          final userDocId = userQuery.docs.first.id;
+          // Increment groupsJoined for this user
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userDocId)
+              .set({
+                'groupsJoined': FieldValue.increment(1),
+              }, SetOptions(merge: true));
+        }
+      } catch (e) {
+        // Skip this member if update fails, don't block group creation
+        debugPrint('Failed to update groupsJoined for @$username: $e');
       }
     }
   }
