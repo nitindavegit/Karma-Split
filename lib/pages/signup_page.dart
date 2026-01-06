@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
+import 'package:uuid/uuid.dart';
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -345,10 +346,8 @@ class _SignupPageState extends State<SignupPage> {
         return;
       }
 
-      // Upload profile image to Cloudinary
-      final userId =
-          _auth.currentUser?.uid ??
-          DateTime.now().millisecondsSinceEpoch.toString();
+      // Generate a unique user ID using UUID
+      final String userId = const Uuid().v4();
       final photoUrl = await _uploadImageToCloudinary(
         File(_profileImage!.path),
         userId,
@@ -358,8 +357,9 @@ class _SignupPageState extends State<SignupPage> {
       final name = _nameController.text.trim();
       final phone = '+91${_mobileController.text.trim()}';
 
-      await FirebaseFirestore.instance.collection('users').doc(phone).set({
+      await FirebaseFirestore.instance.collection('users').doc(userId).set({
         'name': name,
+        'userId': userId,
         'username': username,
         'phone': phone,
         'photoUrl': photoUrl, // Profile image uploaded to Cloudinary
