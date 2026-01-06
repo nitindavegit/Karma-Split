@@ -73,8 +73,8 @@ class _ProfilePageState extends State<ProfilePage> {
     }
 
     return SafeArea(
-      child: WillPopScope(
-        onWillPop: () async => !isLoggingOut,
+      child: PopScope(
+        canPop: !isLoggingOut,
         child: Scaffold(
           backgroundColor: Colors.grey[100],
           body: SingleChildScrollView(
@@ -244,7 +244,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           try {
                             await FirebaseAuth.instance.signOut();
                             // Navigate to auth choice page
-                            if (mounted) {
+                            if (mounted && context.mounted) {
                               Navigator.of(context).pushReplacement(
                                 MaterialPageRoute(
                                   builder: (context) => const AuthChoicePage(),
