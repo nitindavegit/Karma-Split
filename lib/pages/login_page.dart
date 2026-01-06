@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:karma_split/pages/main_page.dart';
+import 'package:karma_split/pages/auth_choice_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -24,6 +25,45 @@ class _LoginPageState extends State<LoginPage> {
     _mobileController.dispose();
     _otpController.dispose();
     super.dispose();
+  }
+
+  Future<bool> _showBackConfirmationDialog() async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Cancel Login?'),
+              content: const Text(
+                'Are you sure you want to cancel the login process?',
+              ),
+              actions: <Widget>[
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  },
+                  child: const Text('Continue Login'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    final navigatorContext = this.context;
+                    Navigator.of(context).pop(true);
+                    if (!mounted) return;
+                    await _auth.signOut();
+                    if (mounted && navigatorContext.mounted) {
+                      Navigator.of(navigatorContext).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (_) => const AuthChoicePage(),
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Cancel Login'),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
   }
 
   Future<void> _getOTP() async {
@@ -67,6 +107,12 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _verifyOTP() async {
     final smsCode = _otpController.text.trim();
     if (_verificationId == null || smsCode.isEmpty) return;
+    if (smsCode.length != 6) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('OTP must be 6 digits')));
+      return;
+    }
     setState(() => _isLoading = true);
     PhoneAuthCredential credential = PhoneAuthProvider.credential(
       verificationId: _verificationId!,
@@ -124,56 +170,157 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
+    return PopScope(
+      canPop: !_otpSent,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        if (_otpSent) {
+          final dialogContext = context;
+          final shouldExit = await _showBackConfirmationDialog();
+          if (shouldExit && dialogContext.mounted) {
+            Navigator.of(dialogContext).pushReplacement(
+              MaterialPageRoute(builder: (_) => const AuthChoicePage()),
+            );
+          }
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.grey[50],
+        appBar: AppBar(
+          title: const Text('Sign In'),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          foregroundColor: Theme.of(context).colorScheme.primary,
+        ),
+        body: SafeArea(
           child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 30),
-                // Mobile number field
-                TextField(
+                const SizedBox(height: 20),
+
+                // Welcome text
+                Text(
+                  'Welcome Back',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Sign in to continue to Karma Split',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 40),
+
+                // Mobile number section
+                Text(
+                  'Mobile Number',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
                   controller: _mobileController,
                   keyboardType: TextInputType.phone,
+                  maxLength: 10,
+                  enabled: !_otpSent,
                   decoration: InputDecoration(
-                    labelText: "Mobile Number",
+                    hintText: 'Enter 10-digit mobile number',
+                    prefixIcon: Icon(Icons.phone, color: Colors.grey[600]),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                    ),
+                    counterText: '',
                   ),
                 ),
                 const SizedBox(height: 20),
+
                 if (_otpSent) ...[
-                  // OTP field
-                  TextField(
+                  // OTP section
+                  Text(
+                    'Enter OTP',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
                     controller: _otpController,
                     keyboardType: TextInputType.number,
+                    maxLength: 6,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 18, letterSpacing: 2),
                     decoration: InputDecoration(
-                      labelText: "Enter OTP",
+                      hintText: 'Enter 6-digit OTP',
+                      prefixIcon: Icon(Icons.lock, color: Colors.grey[600]),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 2,
+                        ),
+                      ),
+                      counterText: '',
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 30),
                   // Verify OTP button
                   ElevatedButton(
                     onPressed: _isLoading ? null : _verifyOTP,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(50),
+                      minimumSize: const Size.fromHeight(56),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      elevation: 2,
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
                         : const Text(
                             "Verify OTP",
-                            style: TextStyle(fontSize: 18),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                   ),
                 ] else ...[
@@ -183,16 +330,55 @@ class _LoginPageState extends State<LoginPage> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Colors.white,
-                      minimumSize: const Size.fromHeight(50),
+                      minimumSize: const Size.fromHeight(56),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
+                      elevation: 2,
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text("Get OTP", style: TextStyle(fontSize: 18)),
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : const Text(
+                            "Send OTP",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                   ),
                 ],
+
+                const SizedBox(height: 30),
+
+                // Sign up link
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "Don't have an account? ",
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(
+                        'Sign Up',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
