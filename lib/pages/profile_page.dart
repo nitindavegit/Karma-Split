@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:karma_split/widgets/ranking_card.dart';
 import 'package:karma_split/widgets/recent_activity_card.dart';
 import 'package:karma_split/widgets/stat_card.dart';
@@ -278,6 +279,11 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                       child: const Text("Logout"),
                     ),
+
+                    const SizedBox(height: 24),
+
+                    // APP CREDITS SECTION
+                    _buildCreditsSection(),
                   ],
                 ),
               ),
@@ -397,6 +403,55 @@ class _ProfilePageState extends State<ProfilePage> {
           title,
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
+      ),
+    );
+  }
+
+  // APP CREDITS SECTION
+  // Replace your _buildCreditsSection() method with this:
+
+  static Widget _buildCreditsSection() {
+    return Center(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.code, size: 18, color: Colors.black87),
+          const SizedBox(width: 6),
+          const Text(
+            "Crafted by ",
+            style: TextStyle(fontSize: 14, color: Colors.black87),
+          ),
+          const Text(
+            "Nitin",
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          // GitHub Icon Button
+          InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () async {
+              final Uri url = Uri.parse('https://github.com/nitindavegit');
+              await launchUrl(url, mode: LaunchMode.externalApplication);
+            },
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.black,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Image.asset(
+                'assets/images/github-mark-white.png',
+                width: 18,
+                height: 18,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
