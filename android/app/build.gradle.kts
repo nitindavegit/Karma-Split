@@ -30,7 +30,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-        
+
         // Enable multidex support for large apps
         multiDexEnabled = true
     }
@@ -44,10 +44,16 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            
+
             // Use debug signing for now (can be replaced with release keystore)
             signingConfig = signingConfigs.getByName("debug")
         }
+    }
+
+    dependencies {
+        implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
+        implementation("com.google.firebase:firebase-auth")
+        implementation("com.google.android.gms:play-services-auth:20.7.0")
     }
 }
 
