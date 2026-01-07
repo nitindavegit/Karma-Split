@@ -2,7 +2,10 @@
 
 A modern Flutter application for group expense tracking with a unique karma point system. Split expenses fairly among friends and family with proof images, real-time tracking, and gamified leaderboards.
 
-![Karma Split](assets/images/AppLogo.png)
+<p align="center">
+  <img src="assets/images/AppLogo.png" alt="Karma Split" width="150"/>
+</p>
+
 
 ---
 
