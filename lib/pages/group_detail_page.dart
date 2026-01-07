@@ -383,6 +383,10 @@ class _GroupDetailPageState extends State<GroupDetailPage>
                   ? 'assets/images/secondMedalopt.png'
                   : rank == 3
                   ? 'assets/images/thirdMedalopt.png'
+                  : rank == 4
+                  ? 'assets/images/fourthMedalopt.png'
+                  : rank == 5
+                  ? 'assets/images/fifthMedalopt.png'
                   : 'assets/images/othermedaloptfinal.png';
 
               return LeaderboardCard(
