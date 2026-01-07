@@ -1,331 +1,229 @@
-# 💫 Karma Split
+# 💰 Karma Split
 
-<div align="center">
+A modern Flutter application for group expense tracking with a unique karma point system. Split expenses fairly among friends and family with proof images, real-time tracking, and gamified leaderboards.
 
-![Karma Split](https://img.shields.io/badge/Karma-Split-purple?style=for-the-badge&logo=flutter&logoColor=white)
-![Flutter](https://img.shields.io/badge/Flutter-3.8.1-blue?style=flat-square&logo=flutter&logoColor=white)
-![Firebase](https://img.shields.io/badge/Firebase-Enabled-orange?style=flat-square&logo=firebase&logoColor=white)
-![Dart](https://img.shields.io/badge/Dart-3.8.1-blue?style=flat-square&logo=dart&logoColor=white)
-
-**A Gamified Expense Splitting App that Makes Managing Group Finances Fun! 🎯**
-
-[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Architecture](#-architecture) • [Contributing](#-contributing)
-
-</div>
+![Karma Split](assets/images/AppLogo.png)
 
 ---
 
-## 📱 About Karma Split
+## ✨ Features
 
-Karma Split revolutionizes the way groups manage shared expenses by combining practical expense tracking with an engaging gamification system. Instead of just splitting bills, users earn "karma points" based on their spending behavior, creating a fun competitive environment that encourages fair participation and transparency.
+### 👥 Group Management
+- **Create & Join Groups**: Easily create expense groups for trips, apartments, or friend circles
+- **Member Management**: Add/remove members, track their contributions
+- **Group Settings**: Configure group details and preferences
 
-### 🌟 What Makes It Special?
+### 💸 Expense Tracking
+- **Add Expenses**: Record expenses with descriptions, amounts, and proof images
+- **Proof Images**: Attach photos as proof for each expense
+- **Smart Splitting**: Split bills equally or by specific amounts
+- **Tag People**: Assign expenses to specific group members
 
-- **🎮 Gamified Experience**: Earn karma points for paying expenses, lose points when you owe money
-- **🏆 Leaderboards**: Compete with friends and group members for the top spot
-- **🏅 Achievement System**: Unlock medals and badges for your accomplishments
-- **📸 Photo Proof**: Upload receipt images for transparency and verification
-- **⚡ Real-time Updates**: See expenses and rankings update instantly across all devices
-- **👥 Smart Group Management**: Create, join, and manage expense groups effortlessly
+### 📊 Karma Points System
+- **Karma Score**: Earn karma points for spending money on the group
+- **Leaderboards**: Compete with friends on who contributes most
+- **Medals & Rankings**: Visual rankings with gold, silver, bronze medals
+- **Real-time Updates**: Karma scores update automatically
 
----
+### 🔐 Authentication
+- **Email/Password Signup**: Secure account creation
+- **Login**: Secure access to your data
+- **Session Management**: Persistent login state
 
-## 🚀 Features
-
-### 💰 Core Expense Management
-- **Add Expenses**: Simple form-based expense entry with amount, description, and proof image
-- **Smart Splitting**: Automatically calculate equal shares among group members
-- **Photo Verification**: Upload receipt images using camera or gallery
-- **Real-time Sync**: All expenses sync instantly across group members
-
-### 🎯 Gamification System
-- **Karma Points**: Dynamic scoring system based on spending patterns
-- **Positive Karma**: Earn points when you pay for group expenses
-- **Negative Karma**: Lose points when you owe money to others
-- **Rankings**: See your position within groups and overall leaderboard
-- **Top Contributors**: Track who's been most generous in each group
-
-### 🏅 Achievement & Recognition
-- **Medal System**: First, Second, Third, Fourth, and Fifth place medals
-- **Leaderboard Cards**: Beautiful profile cards with rankings and points
-- **Top Contributor Badges**: Special recognition for group leaders
-- **Visual Rewards**: Custom medal images and achievement displays
-
-### 👥 Group Features
-- **Create Groups**: Set up expense groups with custom names and images
-- **Member Management**: Add/remove members, track group statistics
-- **Group Leaderboards**: See rankings within each specific group
-- **Activity Tracking**: Monitor group spending patterns and trends
-
-### 🔐 Security & Authentication
-- **Phone Authentication**: Secure login using phone numbers
-- **Firebase Security**: Enterprise-grade security with Firebase Auth
-- **Data Privacy**: All personal and financial data protected
+### 📱 Modern UI/UX
+- **Material Design 3**: Beautiful, modern interface
+- **Dark Mode**: System-wide dark theme support
+- **Responsive Layout**: Works on various screen sizes
+- **Smooth Animations**: Polished user experience
 
 ---
 
-## 🛠️ Technology Stack
+## 🏗️ Architecture
 
-### Frontend
-- **Flutter 3.8.1**: Modern, cross-platform UI framework
-- **Dart**: Type-safe programming language
-- **Material Design**: Beautiful, consistent UI components
-- **Riverpod**: State management for reactive programming
-
-### Backend & Services
-- **Firebase Authentication**: Phone-based user authentication
-- **Cloud Firestore**: Real-time NoSQL database
-- **Firebase Storage**: Secure file and image storage
-- **Firebase Analytics**: Usage tracking and insights
-- **Firebase Crashlytics**: Error monitoring and crash reporting
-
-### External Integrations
-- **Cloudinary**: Advanced image storage and optimization
-- **HTTP**: RESTful API communication
-- **Image Picker**: Camera and gallery integration
+```
+lib/
+├── main.dart                 # App entry point & Firebase initialization
+├── models/                   # Data models
+│   ├── expense.dart         # Expense model with properties
+│   ├── group.dart           # Group model with members
+│   ├── groupmember.dart     # Group member model
+│   └── user.dart            # User profile model
+├── pages/                    # App screens
+│   ├── auth_choice_page.dart      # Login/Signup choice
+│   ├── login_page.dart            # Login screen
+│   ├── signup_page.dart           # Registration screen
+│   ├── main_page.dart             # Main navigation
+│   ├── groups_page.dart           # Groups list
+│   ├── add_group_page.dart        # Create group
+│   ├── group_detail_page.dart     # Group expenses & details
+│   ├── add_expense_page.dart      # Add new expense
+│   └── profile_page.dart          # User profile & stats
+├── providers/                # State management (Riverpod)
+│   └── group_providers.dart  # Group data providers
+├── theme/                    # App theming
+│   └── app_theme.dart        # Theme configuration
+├── utils/                    # Utility functions
+│   ├── karma_calculator.dart     # Karma point calculations
+│   ├── leaderboard_utils.dart    # Leaderboard sorting
+│   ├── number_formatter.dart     # Number formatting
+│   └── image_compressor.dart     # Image compression
+└── widgets/                  # Reusable UI components
+    ├── group_card.dart           # Group preview card
+    ├── expense_card.dart         # Expense display
+    ├── leaderboard_card.dart     # Leaderboard entry
+    ├── stat_card.dart            # Statistics display
+    ├── proof_image.dart          # Expense proof image
+    └── ...
+```
 
 ---
 
-## 📦 Installation
+## 🛠️ Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| **Framework** | Flutter 3.8+ |
+| **Language** | Dart |
+| **Backend** | Firebase (Firestore, Auth, Storage) |
+| **State Management** | Riverpod |
+| **Authentication** | Firebase Auth |
+| **Database** | Cloud Firestore |
+| **Storage** | Firebase Storage (images) |
+| **Analytics** | Firebase Analytics |
+| **Crash Reporting** | Firebase Crashlytics |
+| **Image Handling** | image_picker, flutter_image_compressor |
+| **Camera** | camera |
+| **Permissions** | permission_handler |
+
+---
+
+## 📦 Dependencies
+
+### Core
+- `flutter` - UI framework
+- `firebase_core` - Firebase initialization
+- `flutter_riverpod` - State management
+- `intl` - Internationalization & formatting
+
+### Firebase Services
+- `firebase_auth` - Authentication
+- `cloud_firestore` - Database
+- `firebase_storage` - File storage
+- `firebase_analytics` - Analytics
+- `firebase_crashlytics` - Crash reporting
+
+### Media & Camera
+- `image_picker` - Image selection
+- `camera` - Camera capture
+- `flutter_image_compress` - Image compression
+- `cloudinary_flutter` - Cloud image hosting
+
+### Utilities
+- `permission_handler` - Runtime permissions
+- `shared_preferences` - Local storage
+- `uuid` - Unique ID generation
+- `http` - HTTP requests
+- `flutter_dotenv` - Environment variables
+
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 - Flutter SDK 3.8.1 or higher
-- Dart SDK 3.8.1 or higher
-- Firebase project setup
-- Cloudinary account for image storage
+- Firebase project set up
+- Dart SDK 3.0+
 
-### Setup Steps
+### Installation
 
-1. **Clone the Repository**
+1. **Clone the repository**
    ```bash
    git clone https://github.com/yourusername/karma_split.git
    cd karma_split
    ```
 
-2. **Install Dependencies**
+2. **Install dependencies**
    ```bash
    flutter pub get
    ```
 
-3. **Configure Firebase**
-   - Create a new Firebase project at [Firebase Console](https://console.firebase.google.com)
-   - Enable Authentication (Phone provider)
-   - Enable Cloud Firestore
-   - Enable Firebase Storage
+3. **Set up Firebase**
+   - Create a Firebase project at [Firebase Console](https://console.firebase.google.com)
+   - Add Android and iOS apps
    - Download `google-services.json` (Android) and `GoogleService-Info.plist` (iOS)
-   - Place files in appropriate platform directories
+   - Enable Authentication (Email/Password)
+   - Create Firestore database
+   - Set up Storage bucket
 
-4. **Setup Cloudinary**
-   - Create account at [Cloudinary](https://cloudinary.com)
-   - Create upload preset for expense images
-   - Add environment variables to `.env` file:
-     ```
-     CLOUDINARY_CLOUD_NAME=your_cloud_name
-     CLOUDINARY_UPLOAD_PRESET=your_upload_preset
-     CLOUDINARY_FOLDER=karma_split_expenses
-     ```
+4. **Configure environment**
+   ```bash
+   # Create .env file
+   cp .env.example .env
+   # Add your Firebase config keys
+   ```
 
-5. **Run the App**
+5. **Run the app**
    ```bash
    flutter run
    ```
 
 ---
 
-## 📱 Usage
+## 📱 App Screens
 
-### Getting Started
-1. **Sign Up**: Authenticate using your phone number
-2. **Create Profile**: Set your username and profile picture
-3. **Create Group**: Start a new expense group or join existing ones
-4. **Add Expenses**: Record shared expenses with photos and descriptions
-5. **Track Karma**: Watch your karma points and rankings grow!
-
-### Adding an Expense
-1. Navigate to the "Add Expense" tab
-2. Select the group for the expense
-3. Enter amount and description
-4. Take or upload a photo of the receipt
-5. Tag people who need to split the cost
-6. Submit and watch karma points update automatically
-
-### Understanding Karma Points
-- **Positive Points**: Earned when you pay for group expenses
-- **Negative Points**: Accumulated when you owe money to others
-- **Calculation**: Based on the difference between what you pay and your equal share
-- **Real-time Updates**: Points update immediately after expense submission
+| Screen | Description |
+|--------|-------------|
+| **Auth Choice** | Choose between login and signup |
+| **Login** | Email/password authentication |
+| **Signup** | Create new account |
+| **Groups** | List of all your groups |
+| **Group Detail** | Expenses, members, and karma leaderboard |
+| **Add Expense** | Record new expense with proof |
+| **Profile** | User stats and karma points |
 
 ---
 
-## 🏗️ Architecture
+## 🎯 Karma System Explained
 
-### Project Structure
-```
-lib/
-├── main.dart                 # App entry point
-├── models/                   # Data models
-│   ├── expense.dart         # Expense data structure
-│   ├── group.dart           # Group data structure
-│   ├── groupmember.dart     # Group member data
-│   └── user.dart            # User data structure
-├── pages/                   # Screen widgets
-│   ├── main_page.dart       # Main navigation
-│   ├── add_expense_page.dart # Expense creation
-│   ├── groups_page.dart     # Groups overview
-│   ├── group_detail_page.dart # Individual group view
-│   ├── profile_page.dart    # User profile
-│   ├── login_page.dart      # Authentication
-│   └── signup_page.dart     # User registration
-├── providers/               # State management
-│   └── group_providers.dart # Group state providers
-├── utils/                   # Utility functions
-│   ├── karma_calculator.dart # Karma point calculations
-│   └── leaderboard_utils.dart # Ranking utilities
-├── widgets/                 # Reusable UI components
-│   ├── leaderboard_card.dart # Leaderboard display
-│   ├── group_card.dart      # Group summary cards
-│   ├── amount_spent.dart    # Amount input widget
-│   ├── description.dart     # Description input
-│   ├── proof_image.dart     # Image upload widget
-│   ├── select_group.dart    # Group selection
-│   └── tag_people_card.dart # People tagging
-└── theme/                   # App theming
-    └── app_theme.dart       # Color schemes and styles
+The karma point system rewards members who contribute financially to the group:
+
+- **Earning Karma**: Each ₹1 spent earns 1 karma point
+- **Leaderboard**: Members ranked by total karma earned
+- **Medals**: Top 3 get gold 🥇, silver 🥈, bronze 🥉 medals
+- **Reset**: Karma resets monthly for fresh competition
+
+---
+
+## 🔧 Configuration
+
+### App Version
+Update version in `pubspec.yaml`:
+```yaml
+version: 1.0.0+1
+# major.minor.patch+buildNumber
 ```
 
-### Key Components
+### App Name
+Change app name in:
+- `android/app/src/main/AndroidManifest.xml` (`android:label`)
+- `ios/Runner/Info.plist` (`CFBundleDisplayName`)
 
-#### Data Models
-- **Expense**: Represents individual expense entries with amount, description, creator, and karma points
-- **Group**: Manages group information including members, total karma, and top contributor
-- **User**: Stores user profile information and authentication details
-- **GroupMember**: Tracks individual member statistics within groups
-
-#### State Management
-- **Riverpod Providers**: Reactive state management for groups, expenses, and user data
-- **Stream Builders**: Real-time updates from Firebase Firestore
-- **State Notifiers**: Complex state logic for expense addition and group management
-
-#### Utility Functions
-- **KarmaCalculator**: Handles karma point calculations across multiple groups
-- **LeaderboardUtils**: Manages user rankings and leaderboard generation
-- **ImageHandler**: Processes image uploads to Cloudinary
-
----
-
-## 🎨 UI/UX Features
-
-### Design System
-- **Material Design 3**: Modern, accessible design principles
-- **Custom Color Scheme**: Purple-themed palette for premium feel
-- **Responsive Layout**: Optimized for various screen sizes
-- **Smooth Animations**: Fluid transitions and micro-interactions
-
-### User Experience
-- **Intuitive Navigation**: Bottom tab bar for main sections
-- **Progressive Disclosure**: Step-by-step expense creation process
-- **Real-time Feedback**: Immediate visual feedback for all actions
-- **Error Handling**: Comprehensive error messages and recovery options
-
-### Accessibility
-- **Screen Reader Support**: Proper semantic markup and labels
-- **High Contrast**: Readable color combinations
-- **Touch Targets**: Appropriately sized interactive elements
-- **Keyboard Navigation**: Full keyboard accessibility
-
----
-
-## 🔧 Development
-
-### Code Quality
-- **Flutter Lints**: Enforced coding standards and best practices
-- **Type Safety**: Strong typing throughout the codebase
-- **Error Handling**: Comprehensive try-catch blocks and user feedback
-- **Logging**: Detailed debug logs for troubleshooting
-
-### Performance Optimizations
-- **Lazy Loading**: Efficient data loading for large expense lists
-- **Image Optimization**: Compressed and cached images
-- **Firestore Queries**: Optimized database queries with indexes
-- **State Management**: Minimal rebuilds with Riverpod
-
-### Testing Strategy
-- **Unit Tests**: Core business logic and utility functions
-- **Widget Tests**: UI component behavior verification
-- **Integration Tests**: End-to-end user workflows
-- **Firebase Tests**: Mock Firebase services for testing
-
----
-
-## 📊 Features Deep Dive
-
-### Karma Point System
-The karma point system is the heart of Karma Split's gamification:
-
+### Theme Colors
+Modify in `lib/theme/app_theme.dart`:
 ```dart
-// Karma calculation formula
-final totalAmount = expense.amount;
-final numberOfPeople = taggedPeople.length + 1; // +1 for payer
-final equalShare = totalAmount / numberOfPeople;
-final netContribution = totalAmount - equalShare;
-final creatorKarmaPoints = netContribution;
+static const Color primary = Color(0xFF6200EE);
+static const Color secondary = Color(0xFF03DAC6);
 ```
-
-### Real-time Leaderboards
-- **Group Rankings**: Live updates within each expense group
-- **Global Rankings**: Overall user rankings across all groups
-- **Top Contributor Tracking**: Automatic detection and display of group leaders
-- **Medal System**: Visual rewards for top performers
-
-### Image Management
-- **Camera Integration**: Direct photo capture from app
-- **Gallery Selection**: Choose existing photos from device
-- **Cloudinary Upload**: Secure cloud storage with optimization
-- **Image Validation**: Size and format verification
-
----
-
-## 🚀 Future Enhancements
-
-### Planned Features
-- **Expense Categories**: Organize expenses by type (food, transport, entertainment)
-- **Settlement Reminders**: Automated notifications for outstanding balances
-- **Currency Support**: Multiple currency handling for international groups
-- **Export Data**: CSV/PDF export for expense tracking
-- **Dark Mode**: System-wide dark theme support
-
-### Advanced Features
-- **AI Receipt Scanning**: OCR technology for automatic expense entry
-- **Predictive Analytics**: Spending pattern analysis and recommendations
-- **Integration APIs**: Connect with banking and payment apps
-- **Multi-language Support**: Internationalization for global users
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions to Karma Split! Here's how you can help:
-
-### Ways to Contribute
-- **Bug Reports**: Submit issues for bugs or unexpected behavior
-- **Feature Requests**: Suggest new features or improvements
-- **Code Contributions**: Submit pull requests for fixes or enhancements
-- **Documentation**: Improve code documentation and user guides
-- **Testing**: Help test new features and report issues
-
-### Development Guidelines
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-### Code Standards
-- Follow Flutter and Dart style guides
-- Write meaningful commit messages
-- Add tests for new functionality
-- Update documentation as needed
-- Ensure all tests pass before submitting
 
 ---
 
@@ -335,31 +233,24 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🙏 Acknowledgments
+## 👨‍💻 Creator
 
-- **Flutter Team**: For the amazing cross-platform framework
-- **Firebase**: For the robust backend infrastructure
-- **Cloudinary**: For reliable image storage and processing
-- **Material Design**: For the comprehensive design system
-- **Open Source Community**: For the countless libraries and tools
+**Nitin Dave**
+
+- GitHub: [@yourusername](https://github.com/yourusername)
+- Email: your.email@example.com
 
 ---
 
-## 📞 Support
+## 🙏 Acknowledgments
 
-Need help or have questions? Here's how to reach us:
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/karma_split/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/karma_split/discussions)
-- **Email**: support@karmasplit.com
-- **Documentation**: [Wiki](https://github.com/yourusername/karma_split/wiki)
+- [Flutter](https://flutter.dev) - UI toolkit
+- [Firebase](https://firebase.google.com) - Backend services
+- [Riverpod](https://riverpod.dev) - State management
+- [Icons8](https://icons8.com) - App icons
 
 ---
 
 <div align="center">
-
-**Made with ❤️ by the Nitin Dave**
-
-[⬆ Back to Top](#-karma-split)
-
+  Made with ❤️ by Nitin Dave
 </div>
