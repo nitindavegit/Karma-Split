@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:karma_split/pages/add_expense_page.dart';
@@ -15,6 +16,7 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   int _currentPage = 0;
 
   // Create pages with callbacks for navigation
+  // Use late init to ensure pages are created only once
   late final List<Widget> _pages;
 
   // For press again to exit functionality
@@ -40,10 +42,20 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Reset the warning when app comes back to foreground
-    if (state == AppLifecycleState.resumed) {
-      setState(() {
-        _showExitWarning = false;
+    // Exit the app completely when it goes to background
+    // This ensures a fresh start when the app is opened again
+    if (state == AppLifecycleState.paused) {
+      // Use a delay to ensure the app has time to pause properly
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          // Try multiple methods to exit the app
+          try {
+            SystemNavigator.pop(animated: true);
+          } catch (e) {
+            // If SystemNavigator.pop() fails, try exit(0)
+            exit(0);
+          }
+        }
       });
     }
   }
@@ -69,9 +81,11 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
       _lastBackPressTime = now;
 
       // Show snackbar warning
-      setState(() {
-        _showExitWarning = true;
-      });
+      if (mounted) {
+        setState(() {
+          _showExitWarning = true;
+        });
+      }
 
       // Clear the warning after 2 seconds
       Future.delayed(const Duration(seconds: 2), () {
@@ -98,38 +112,40 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
         // Handle back press with "press again to exit" logic
         final shouldExit = await _onWillPop();
         if (shouldExit && mounted) {
-          // Use SystemNavigator.pop() to exit the app properly on Android
-          SystemNavigator.pop();
+          // Use exit(0) to exit the app properly on Android
+          exit(0);
         }
       },
       child: Scaffold(
-        body: Stack(
-          children: [
-            _pages[_currentPage],
-            // Exit warning overlay
-            if (_showExitWarning)
-              Positioned(
-                left: 0,
-                right: 0,
-                top: MediaQuery.of(context).padding.top + 10,
-                child: Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.black87,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'Press back again to exit',
-                      style: TextStyle(color: Colors.white, fontSize: 14),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              _pages[_currentPage],
+              // Exit warning overlay
+              if (_showExitWarning)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 10,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black87,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text(
+                        'Press back again to exit',
+                        style: TextStyle(color: Colors.white, fontSize: 14),
+                      ),
                     ),
                   ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentPage,

@@ -31,8 +31,8 @@ class AuthWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
+    return FutureBuilder<User?>(
+      future: _getAuthUserWithTimeout(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           // Show splash screen while checking auth state
@@ -49,7 +49,7 @@ class AuthWrapper extends StatelessWidget {
             ),
           );
         }
-        if (snapshot.hasData) {
+        if (snapshot.hasData && snapshot.data != null) {
           return const MainPage();
         } else {
           // On first launch, show AuthChoicePage regardless of auth state
@@ -58,6 +58,24 @@ class AuthWrapper extends StatelessWidget {
         }
       },
     );
+  }
+
+  // Get current user with a timeout to prevent hanging on resume
+  static Future<User?> _getAuthUserWithTimeout() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      return user;
+    }
+
+    // Wait for auth state change with timeout
+    try {
+      return await FirebaseAuth.instance.authStateChanges().first.timeout(
+        const Duration(seconds: 10),
+      );
+    } catch (e) {
+      // Timeout or error - return null
+      return null;
+    }
   }
 
   // Static method to check if user is logged in
