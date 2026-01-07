@@ -38,8 +38,73 @@ class _SignupPageState extends State<SignupPage> {
   bool _isCheckingUsername = false;
   String? _usernameError;
 
-  // Validation patterns
-  static const String _usernamePattern = r'^[a-zA-Z0-9_]{3,20}$';
+  // Username validation rules:
+  // 1. Must be 1-15 characters long
+  // 2. Only letters (a-z), numbers (0-9), periods (.), and underscores (_)
+  // 3. No spaces allowed
+  // 4. No special characters (! @ # $ % & *)
+  // 5. Cannot start or end with a period (.)
+  // 6. No consecutive periods (..)
+  // 7. Cannot be only numbers
+  // 8. Minimum 3 characters
+  String? _validateUsername(String username) {
+    if (username.isEmpty) {
+      return 'Please enter a username';
+    }
+    // check length (3 characters)
+    if (username.length < 3) {
+      return 'Username must be at least 3 characters';
+    }
+
+    // Check length (1-15 characters)
+    if (username.length > 15) {
+      return 'Username must be 15 characters or less';
+    }
+
+    // Check for spaces
+    if (username.contains(' ')) {
+      return 'Username cannot contain spaces';
+    }
+
+    // Check for invalid special characters
+    final invalidChars = RegExp(r'[!@#$%&*^()]');
+    if (invalidChars.hasMatch(username)) {
+      return 'Username can only contain lowercase letters, numbers, periods, and underscores';
+    }
+
+    // Check for uppercase letters
+    if (RegExp(r'[A-Z]').hasMatch(username)) {
+      return 'Username must contain only lowercase letters';
+    }
+
+    // Check if starts with period
+    if (username.startsWith('.')) {
+      return 'Username cannot start with a period';
+    }
+
+    // Check if ends with period
+    if (username.endsWith('.')) {
+      return 'Username cannot end with a period';
+    }
+
+    // Check for consecutive periods
+    if (username.contains('..')) {
+      return 'Username cannot contain consecutive periods';
+    }
+
+    // Check if only numbers
+    if (RegExp(r'^[0-9]+$').hasMatch(username)) {
+      return 'Username cannot be only numbers';
+    }
+
+    // Check for at least one lowercase letter (to ensure it's not just numbers and periods/underscores)
+    if (!RegExp(r'[a-z]').hasMatch(username)) {
+      return 'Username must contain at least one lowercase letter';
+    }
+
+    return null; // Validation passed
+  }
+
   static const String _namePattern = r'^[a-zA-Z\s]{2,50}$';
 
   @override
@@ -69,26 +134,16 @@ class _SignupPageState extends State<SignupPage> {
       _usernameError = null;
     });
 
-    // Only check for availability if basic validation passes
-    if (username.isEmpty) {
-      return; // Don't show error for empty field
-    }
-
-    if (username.length < 3) {
+    // Validate username format
+    final validationError = _validateUsername(username);
+    if (validationError != null) {
       setState(() {
-        _usernameError = 'Username must be at least 3 characters';
+        _usernameError = validationError;
       });
       return;
     }
 
-    if (!RegExp(_usernamePattern).hasMatch(username)) {
-      setState(() {
-        _usernameError =
-            'Username can only contain letters, numbers, and underscores';
-      });
-      return;
-    }
-
+    // Check availability if validation passes
     setState(() {
       _isCheckingUsername = true;
     });
@@ -419,10 +474,10 @@ class _SignupPageState extends State<SignupPage> {
       return false;
     }
 
-    if (!RegExp(_usernamePattern).hasMatch(username)) {
-      _showErrorSnackBar(
-        'Username must be 3-20 characters, letters, numbers, and underscores only',
-      );
+    // Final validation before signup
+    final validationError = _validateUsername(username);
+    if (validationError != null) {
+      _showErrorSnackBar(validationError);
       return false;
     }
 
