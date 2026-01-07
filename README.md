@@ -358,7 +358,7 @@ Need help or have questions? Here's how to reach us:
 
 <div align="center">
 
-**Made with ❤️ by the Karma Split Team**
+**Made with ❤️ by the Nitin Dave**
 
 [⬆ Back to Top](#-karma-split)
 
