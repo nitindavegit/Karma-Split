@@ -270,7 +270,7 @@ class _AddGroupPageState extends State<AddGroupPage> {
         'lastActivity': FieldValue.serverTimestamp(),
         'createdAt': FieldValue.serverTimestamp(),
         'topContributor':
-            _creatorData?['name'] ?? _creatorData?['username'] ?? '',
+            _creatorData?['username'] ?? _creatorData?['name'] ?? '',
         'topContributorImageUrl': _creatorData?['photoUrl'] ?? '',
         'topContributorKarmaPoints': 0.0,
         'isActive': true,
