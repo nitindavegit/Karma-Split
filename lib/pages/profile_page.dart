@@ -116,21 +116,27 @@ class _ProfilePageState extends State<ProfilePage> {
                                       as ImageProvider,
                           ),
                           const SizedBox(width: 16),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                userData['name'] ?? "No Name",
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  userData['name'] ?? "No Name",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                "@$username",
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                            ],
+                                Text(
+                                  "@$username",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Colors.grey),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -412,11 +418,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
   static Widget _buildCreditsSection() {
     return Center(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Wrap(
+        alignment: WrapAlignment.center,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: 6,
+        runSpacing: 6,
         children: [
           const Icon(Icons.code, size: 18, color: Colors.black87),
-          const SizedBox(width: 6),
           const Text(
             "Crafted by ",
             style: TextStyle(fontSize: 14, color: Colors.black87),
@@ -429,7 +437,6 @@ class _ProfilePageState extends State<ProfilePage> {
               color: Colors.black87,
             ),
           ),
-          const SizedBox(width: 10),
 
           // GitHub Icon Button
           InkWell(

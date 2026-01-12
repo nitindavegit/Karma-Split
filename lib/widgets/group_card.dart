@@ -69,39 +69,50 @@ class GroupCard extends StatelessWidget {
             const SizedBox(height: 12),
             // row of members and total karma points
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    // People icon
-                    Icon(Icons.people_alt_sharp),
-                    const SizedBox(width: 8),
-                    // Members
-                    Text(
-                      "$noOfMembers members",
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                Expanded(
+                  child: Row(
+                    children: [
+                      // People icon
+                      Icon(Icons.people_alt_sharp),
+                      const SizedBox(width: 8),
+                      // Members
+                      Expanded(
+                        child: Text(
+                          "$noOfMembers members",
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    // Trophy icon
-                    Icon(Icons.emoji_events),
-                    const SizedBox(width: 8),
-                    // total karma points
-                    Text(
-                      NumberFormatter.formatKarma(totalKarmaPoints),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      // Trophy icon
+                      Icon(Icons.emoji_events),
+                      const SizedBox(width: 8),
+                      // total karma points
+                      Flexible(
+                        child: Text(
+                          NumberFormatter.formatKarma(totalKarmaPoints),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -112,46 +123,46 @@ class GroupCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    // Image of Top contributor
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(50),
-                      child: Image.network(
-                        topContributorImageUrl,
-                        height: 30,
-                        width: 30,
-                        fit: BoxFit.cover,
+                Expanded(
+                  child: Row(
+                    children: [
+                      // Image of Top contributor
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(50),
+                        child: Image.network(
+                          topContributorImageUrl,
+                          height: 30,
+                          width: 30,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Name of top contributor
-                    Text(
-                      topContributor,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(width: 8),
+                      // Name of top contributor
+                      Expanded(
+                        child: Text(
+                          topContributor,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    // points of top contributor
-                    Text(
-                      NumberFormatter.formatKarmaPoints(
-                        topContributorKarmaPoints,
-                      ),
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 12),
+                // points of top contributor
+                Text(
+                  NumberFormatter.formatKarmaPoints(topContributorKarmaPoints),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),

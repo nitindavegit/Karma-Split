@@ -434,7 +434,11 @@ class _GroupDetailPageState extends State<GroupDetailPage>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.groupName),
+        title: Text(
+          widget.groupName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) async {
