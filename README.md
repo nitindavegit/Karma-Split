@@ -1,6 +1,13 @@
+
 # 💰 Karma Split
 
-A modern Flutter application for group expense tracking with a unique karma point system. Split expenses fairly among friends and family with proof images, real-time tracking, and gamified leaderboards.
+> **A social expense tracker with a karma point system.**  
+> Track expenses, split bills, and earn karma points for your contributions.
+
+![Topics](https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white)
+![Topics](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
+![Topics](https://img.shields.io/badge/Riverpod-2D3748?style=for-the-badge&logo=riverpod&logoColor=white)
+![Topics](https://img.shields.io/badge/Dart-0175C2?style=for-the-badge&logo=dart&logoColor=white)
 
 <p align="center">
   <img src="assets/images/AppLogo.png" alt="Karma Split" width="150"/>
@@ -28,16 +35,21 @@ A modern Flutter application for group expense tracking with a unique karma poin
 - **Medals & Rankings**: Visual rankings with gold, silver, bronze medals
 - **Real-time Updates**: Karma scores update automatically
 
-### 🔐 Authentication
-- **Email/Password Signup**: Secure account creation
-- **Login**: Secure access to your data
-- **Session Management**: Persistent login state
+---
 
-### 📱 Modern UI/UX
-- **Material Design 3**: Beautiful, modern interface
-- **Dark Mode**: System-wide dark theme support
-- **Responsive Layout**: Works on various screen sizes
-- **Smooth Animations**: Polished user experience
+## 🔒 Demo Credentials & Limits
+
+**Note:** To prevent abuse, this app has a global daily limit of **10 OTP requests**.
+
+### ⚠️ If OTP Limit Exceeds
+If you see the "Limit Reached" message, please use the following **Demo Credentials** to access the app in "View Only" mode:
+
+| 📱 Phone Number | 🔑 OTP |
+|----------------|---------|
+| **7233665588** | **625285** |
+
+### Other Limits
+*   **Daily Expenses**: Max 10 expenses per user per day.
 
 ---
 
