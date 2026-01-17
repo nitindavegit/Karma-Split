@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:karma_split/pages/main_page.dart';
@@ -66,6 +67,124 @@ class _LoginPageState extends State<LoginPage> {
         false;
   }
 
+  Future<void> _checkAccount(String phone) async {
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('phone', isEqualTo: phone)
+          .limit(1)
+          .get();
+      
+      if (!mounted) return;
+
+      if (querySnapshot.docs.isNotEmpty) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainPage()),
+          (route) => false,
+        );
+      } else {
+        await _auth.signOut();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Account not found. Please sign up.')),
+          );
+        }
+      }
+    } catch (e) {
+      // Handle error
+    }
+  }
+
+  // Removed _useDemoCredentials as we don't auto-fill anymore
+
+  Future<bool> _checkGlobalOtpLimit(String phoneNumber) async {
+    // BYPASS LIMIT FOR DEMO NUMBER
+    String demoPhone = dotenv.env['DEMO_PHONE_NUMBER'];
+    // Sanitize for comparison
+    demoPhone = demoPhone.replaceAll(RegExp(r'\D'), '');
+    if (demoPhone.length > 10) {
+      demoPhone = demoPhone.substring(demoPhone.length - 10);
+    }
+
+    if (phoneNumber.contains(demoPhone)) {
+      return true;
+    }
+
+    try {
+      final docRef = FirebaseFirestore.instance
+          .collection('system_metrics')
+          .doc('auth_metrics');
+
+      return await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final snapshot = await transaction.get(docRef);
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+
+        if (!snapshot.exists) {
+          // Initialize if not exists
+          transaction.set(docRef, {
+            'otp_requests_count': 1,
+            'last_reset_date': Timestamp.fromDate(today),
+          });
+          return true; // Use 1st request
+        }
+
+        final data = snapshot.data()!;
+        final lastResetTimestamp = data['last_reset_date'] as Timestamp;
+        final lastResetDate = lastResetTimestamp.toDate();
+        final resetDate = DateTime(lastResetDate.year, lastResetDate.month, lastResetDate.day);
+
+        int currentCount = data['otp_requests_count'] as int;
+
+        if (today.isAfter(resetDate)) {
+          // New day, reset counter
+          currentCount = 0;
+          transaction.update(docRef, {
+            'otp_requests_count': 1,
+            'last_reset_date': Timestamp.fromDate(today),
+          });
+          return true;
+        }
+
+        if (currentCount >= 0) { // TEMPORARY: Set to 0 to test Limit Reached UI
+          return false; // Limit reached
+        }
+
+        // Increment
+        transaction.update(docRef, {
+          'otp_requests_count': currentCount + 1,
+        });
+        return true;
+      });
+    } catch (e) {
+      print("Error checking OTP limit: $e");
+      return true; // Fail safe: allow login if check fails
+    }
+  }
+
+  Future<void> _showLimitReachedDialog() async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Daily Login Limit Reached'),
+          content: const Text(
+            'The daily limit for OTP verifications has been reached for the app.\n\nFor demo access, please check the README on our GitHub repository.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _getOTP() async {
     final phone = "+91${_mobileController.text.trim()}";
     if (phone.length != 13 ||
@@ -75,7 +194,17 @@ class _LoginPageState extends State<LoginPage> {
       );
       return;
     }
+    
     setState(() => _isLoading = true);
+
+    // CHECK GLOBAL LIMIT
+    final allowed = await _checkGlobalOtpLimit(phone);
+    if (!allowed) {
+      setState(() => _isLoading = false);
+      if (mounted) _showLimitReachedDialog();
+      return;
+    }
+
     await _auth.verifyPhoneNumber(
       phoneNumber: phone,
       verificationCompleted: (PhoneAuthCredential credential) async {
@@ -99,7 +228,7 @@ class _LoginPageState extends State<LoginPage> {
         );
       },
       codeAutoRetrievalTimeout: (String verificationId) {
-        _verificationId = verificationId;
+        if (mounted) _verificationId = verificationId;
       },
     );
   }
@@ -107,13 +236,16 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _verifyOTP() async {
     final smsCode = _otpController.text.trim();
     if (_verificationId == null || smsCode.isEmpty) return;
+
     if (smsCode.length != 6) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('OTP must be 6 digits')));
       return;
     }
+    
     setState(() => _isLoading = true);
+
     PhoneAuthCredential credential = PhoneAuthProvider.credential(
       verificationId: _verificationId!,
       smsCode: smsCode,
@@ -139,7 +271,11 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     try {
-      final phone = "+91${_mobileController.text.trim()}";
+      final phone = user.phoneNumber ?? "";
+      if (phone.isEmpty) { // Fallback if phoneNumber is null
+         // Should not happen with Phone Auth
+      }
+      
       final querySnapshot = await FirebaseFirestore.instance
           .collection('users')
           .where('phone', isEqualTo: phone)

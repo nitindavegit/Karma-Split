@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:karma_split/pages/login_page.dart';
 import 'package:karma_split/pages/main_page.dart';
 import 'package:karma_split/pages/auth_choice_page.dart';
 import 'package:http/http.dart' as http;
@@ -180,8 +181,108 @@ class _SignupPageState extends State<SignupPage> {
     }
   }
 
+  Future<bool> _checkGlobalOtpLimit(String phoneNumber) async {
+    // BYPASS LIMIT FOR DEMO NUMBER
+    final demoPhone = dotenv.env['DEMO_PHONE_NUMBER'];
+    if (phoneNumber.contains(demoPhone)) {
+      return true;
+    }
+
+    try {
+      final docRef = FirebaseFirestore.instance
+          .collection('system_metrics')
+          .doc('auth_metrics');
+
+      return await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final snapshot = await transaction.get(docRef);
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+
+        if (!snapshot.exists) {
+           // Initialize if not exists
+          transaction.set(docRef, {
+            'otp_requests_count': 1,
+            'last_reset_date': Timestamp.fromDate(today),
+          });
+          return true;
+        }
+
+        final data = snapshot.data()!;
+        final lastResetTimestamp = data['last_reset_date'] as Timestamp;
+        final lastResetDate = lastResetTimestamp.toDate();
+        final resetDate = DateTime(lastResetDate.year, lastResetDate.month, lastResetDate.day);
+
+        int currentCount = data['otp_requests_count'] as int;
+
+        if (today.isAfter(resetDate)) {
+           // New day, reset
+          currentCount = 0;
+          transaction.update(docRef, {
+            'otp_requests_count': 1,
+            'last_reset_date': Timestamp.fromDate(today),
+          });
+          return true;
+        }
+
+        if (currentCount >= 0) { // TEMPORARY: Set to 0 to test Limit Reached UI
+          return false;
+        }
+
+        transaction.update(docRef, {
+          'otp_requests_count': currentCount + 1,
+        });
+        return true;
+      });
+    } catch (e) {
+      print("Error checking OTP limit: $e");
+      return true;
+    }
+  }
+
+  Future<void> _showLimitReachedDialog() async {
+    return showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Daily Login Limit Reached'),
+          content: const Text(
+            'The daily limit for OTP verifications has been reached for the app.\n\nFor demo access, please check the README on our GitHub repository.',
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Navigate to Login Page for Demo Login
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                );
+              },
+              child: const Text('Go to Login'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Future<void> _getOTP() async {
     final phone = "+91${_mobileController.text.trim()}";
+    
+    // Check Global Limit first
+    final allowed = await _checkGlobalOtpLimit(phone);
+    if (!allowed) {
+      if (mounted) _showLimitReachedDialog();
+      return;
+    }
+
     if (!_validateMobileNumber()) return;
 
     // Check if mobile number is already registered - DO THIS FIRST before OTP
