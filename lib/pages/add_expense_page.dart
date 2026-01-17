@@ -70,6 +70,12 @@ class _AddExpensePageState extends State<AddExpensePage> {
   }
 
   // Fetch Groups
+  Future<bool> _isDemoUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    final demoPhone = dotenv.env['DEMO_PHONE_NUMBER'] ?? "1234567890";
+    return user?.phoneNumber?.contains(demoPhone) ?? false;
+  }
+
   Future<void> _fetchUserGroups() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -300,6 +306,31 @@ class _AddExpensePageState extends State<AddExpensePage> {
       final username = userDoc['username'] as String;
       final userPhotoUrl = userDoc['photoUrl'] as String? ?? '';
 
+      // CHECK DEMO USER
+      final demoPhone = dotenv.env['DEMO_PHONE_NUMBER'] ?? "1234567890";
+      if (phone == "+91$demoPhone" || phone.contains(demoPhone)) {
+         throw Exception("Demo User is View Only. Action restricted.");
+      }
+
+      // CHECK DAILY EXPENSE LIMIT
+      final lastExpenseDateTimestamp = userDoc['lastExpenseDate'];
+      int dailyCount = (userDoc['dailyExpenseCount'] as int?) ?? 0;
+      
+      if (lastExpenseDateTimestamp != null) {
+        final lastDate = (lastExpenseDateTimestamp as Timestamp).toDate();
+        final now = DateTime.now();
+        final today = DateTime(now.year, now.month, now.day);
+        final lastDay = DateTime(lastDate.year, lastDate.month, lastDate.day);
+        
+        if (today.isAfter(lastDay)) {
+           dailyCount = 0; // Reset for new day
+        }
+      }
+      
+      if (dailyCount >= 10) {
+        throw Exception("Daily limit of 10 expenses reached.");
+      }
+
       // Create expense document first to get expenseId
       final expenseRef = FirebaseFirestore.instance
           .collection('groups')
@@ -348,9 +379,12 @@ class _AddExpensePageState extends State<AddExpensePage> {
       expenseRef.set(expenseData);
 
       // Update creator statistics (removed totalKarmaPoints as it will be calculated dynamically)
+      // ALSO UPDATE DAILY LIMIT TRACKING
       await FirebaseFirestore.instance.collection('users').doc(userDoc.id).set({
         'expensesAdded': FieldValue.increment(1),
         'totalSpent': FieldValue.increment(totalAmount),
+        'dailyExpenseCount': dailyCount + 1,
+        'lastExpenseDate': FieldValue.serverTimestamp(),
         // 'totalKarmaPoints' removed - will be calculated dynamically from all groups
       }, SetOptions(merge: true));
 
@@ -615,9 +649,25 @@ class _AddExpensePageState extends State<AddExpensePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Add Expense",
-          style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+        title: Column(
+          children: [
+             const Text(
+              "Add Expense",
+              style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+            ),
+             FutureBuilder(
+               future: _isDemoUser(),
+               builder: (context, snapshot) {
+                 if (snapshot.hasData && snapshot.data == true) {
+                   return const Text(
+                     "(Demo View Only)",
+                     style: TextStyle(fontSize: 14, color: Colors.orange),
+                   );
+                 }
+                 return const SizedBox.shrink();
+               }
+             )
+          ]
         ),
         centerTitle: true,
       ),
