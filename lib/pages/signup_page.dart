@@ -224,7 +224,7 @@ class _SignupPageState extends State<SignupPage> {
           return true;
         }
 
-        if (currentCount >= 0) { // TEMPORARY: Set to 0 to test Limit Reached UI
+        if (currentCount >= 10) { // Limit set to 10
           return false;
         }
 

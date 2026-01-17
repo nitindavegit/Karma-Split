@@ -146,7 +146,7 @@ class _LoginPageState extends State<LoginPage> {
           return true;
         }
 
-        if (currentCount >= 0) { // TEMPORARY: Set to 0 to test Limit Reached UI
+        if (currentCount >= 10) { // Limit set to 10
           return false; // Limit reached
         }
 
