@@ -13,6 +13,12 @@
   <img src="assets/images/AppLogo.png" alt="Karma Split" width="150"/>
 </p>
 
+<p align="center">
+  <a href="https://youtube.com/shorts/WbNIxsJ654g?feature=share">🎥 <b>Watch Demo Video</b></a>
+  &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+  <a href="https://drive.google.com/file/d/1mEwKz-GiBTw2rJaJjYL_B7I4axXcJWEj/view?usp=sharing">📥 <b>Download APK</b></a>
+</p>
+
 
 ---
 
