@@ -183,7 +183,7 @@ class _SignupPageState extends State<SignupPage> {
 
   Future<bool> _checkGlobalOtpLimit(String phoneNumber) async {
     // BYPASS LIMIT FOR DEMO NUMBER
-    final demoPhone = dotenv.env['DEMO_PHONE_NUMBER'];
+    final demoPhone = dotenv.env['DEMO_PHONE_NUMBER'] ?? "7233665588";
     if (phoneNumber.contains(demoPhone)) {
       return true;
     }

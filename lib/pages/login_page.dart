@@ -99,7 +99,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<bool> _checkGlobalOtpLimit(String phoneNumber) async {
     // BYPASS LIMIT FOR DEMO NUMBER
-    String demoPhone = dotenv.env['DEMO_PHONE_NUMBER'];
+    String demoPhone = dotenv.env['DEMO_PHONE_NUMBER'] ?? "7233665588";
     // Sanitize for comparison
     demoPhone = demoPhone.replaceAll(RegExp(r'\D'), '');
     if (demoPhone.length > 10) {
